@@ -115,6 +115,8 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
     for vehicle_id, vehicle in id_to_vehicle.items():
         vehicle_id_to_planned_route[vehicle_id] = []
         if vehicle.destination != None:
+            if vehicle.destination.delivery_items != []:  # for those same-location delivery and then pickup
+                vehicle.destination.pickup_items = []
             vehicle_id_to_planned_route[vehicle_id].append(vehicle.destination)
 
 
