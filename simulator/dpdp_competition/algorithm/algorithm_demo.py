@@ -37,6 +37,76 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
     :param id_to_vehicle: vehicle_id ——> Vehicle object
     :param id_to_factory: factory_id ——> factory object
     """
+
+    ############################### test area ############################
+    # 1. timing
+    # t_start = time.time()
+    # t_running_control = 300.0
+    #
+    #
+    # for i in range(int(1e100)):
+    #     t_current = time.time()
+    #     if t_current - t_start > t_running_control:
+    #         break
+
+    # 2. Map
+
+    # print(Map.calculate_transport_time_between_factories('9829a9e1f6874f28b33b57a7a42bb49f','8479328003a8427ca68b7600f0ac7045'))
+
+    # 3. Vehicle capacity
+    # VEHICLE_CAPA = 0   # int
+    # for vehicle_id, vehicle in id_to_vehicle.items():
+    #     if vehicle.board_capacity > VEHICLE_CAPA:
+    #         VEHICLE_CAPA = vehicle.board_capacity
+    #
+    # print(VEHICLE_CAPA)
+
+    # # dealing with the carrying items of vehicles (处理车辆身上已经装载的货物)
+    # def dealing_carrying_items(vehicle_id):
+    #
+    # #for vehicle_id, vehicle in id_to_vehicle.items():
+    #     vehicle = id_to_vehicle[vehicle_id]
+    #
+    #     unloading_sequence_of_items = vehicle.get_unloading_sequence()
+    #     vehicle_id_to_planned_route[vehicle_id] = []
+    #     if len(unloading_sequence_of_items) > 0:
+    #         delivery_item_list = []
+    #         factory_id = unloading_sequence_of_items[0].delivery_factory_id
+    #         for item in unloading_sequence_of_items:
+    #             if item.delivery_factory_id == factory_id:
+    #                 delivery_item_list.append(item)
+    #             else:
+    #                 factory = id_to_factory.get(factory_id)
+    #                 node = Node(factory_id, factory.lng, factory.lat, [], copy.copy(delivery_item_list))
+    #                 vehicle_id_to_planned_route[vehicle_id].append(node)
+    #                 delivery_item_list = [item]
+    #                 factory_id = item.delivery_factory_id
+    #         if len(delivery_item_list) > 0:
+    #             factory = id_to_factory.get(factory_id)
+    #             node = Node(factory_id, factory.lng, factory.lat, [], copy.copy(delivery_item_list))
+    #             vehicle_id_to_planned_route[vehicle_id].append(node)
+    #
+    #     return
+    #
+    #
+    # for vehicle_id, vehicle in id_to_vehicle.items():
+    #     vehicle_id_to_planned_route[vehicle_id] = []
+    #
+    #     current_load_quantity = 0.0
+    #     current_load_list = vehicle.get_unloading_sequence()
+    #     for item in current_load_list:
+    #         current_load_quantity += item.demand
+    #     if current_load_quantity >= 10.0:
+    #         dealing_carrying_items(vehicle_id)
+    #     else:
+    #         continue
+
+    ############################### test area end ############################
+
+
+
+
+
     vehicle_id_to_destination = {}
     vehicle_id_to_planned_route = {}
 
