@@ -106,7 +106,7 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
 
 
     def two_node_close (node1: Node, node2: Node):
-        if route_info.calculate_transport_time_between_factories(node1.id,node2.id) < 3000.0:
+        if route_info.calculate_transport_time_between_factories(node1.id,node2.id) < 500.0:  # hyperparameter
             return True
         return False
 
@@ -209,15 +209,17 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
                         continue
                     vehicle = vehicles[vehicle_index]
 
-
-
-                    if len(vehicle_id_to_planned_route[vehicle.id]) == 0:
-                        vehicle_id_to_planned_route[vehicle.id].append(pickup_node)
-                        vehicle_id_to_planned_route[vehicle.id].append(delivery_node)
-                    elif two_node_close(vehicle_id_to_planned_route[vehicle.id][0], pickup_node) and (__calculate_demand(vehicle.get_unloading_sequence()) + cur_demand) < capacity:
-                        vehicle_id_to_planned_route[vehicle.id].insert(1,pickup_node)
-                        vehicle_id_to_planned_route[vehicle.id].insert(2,delivery_node)
-                    else:
+                    has_been_allocated = False
+                    for v_id, v in id_to_vehicle.items():
+                        if len(vehicle_id_to_planned_route[v_id]) == 0 or len(vehicle_id_to_planned_route[v_id]) > 3:
+                            continue
+                        elif two_node_close(vehicle_id_to_planned_route[v_id][0], pickup_node) and (
+                        __calculate_demand(v.get_unloading_sequence()) + __calculate_demand(vehicle_id_to_planned_route[v_id][0].pickup_items) + demand < capacity):
+                            vehicle_id_to_planned_route[v_id].insert(1,pickup_node)
+                            vehicle_id_to_planned_route[v_id].insert(2,delivery_node)
+                            has_been_allocated = True
+                            break
+                    if not has_been_allocated:
                         vehicle_id_to_planned_route[vehicle.id].append(pickup_node)
                         vehicle_id_to_planned_route[vehicle.id].append(delivery_node)
 
@@ -234,14 +236,17 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
                     continue
                 vehicle = vehicles[vehicle_index]
 
-                if len(vehicle_id_to_planned_route[vehicle.id]) == 0:
-                    vehicle_id_to_planned_route[vehicle.id].append(pickup_node)
-                    vehicle_id_to_planned_route[vehicle.id].append(delivery_node)
-                elif two_node_close(vehicle_id_to_planned_route[vehicle.id][0], pickup_node) and (
-                        __calculate_demand(vehicle.get_unloading_sequence()) + cur_demand) < capacity:
-                    vehicle_id_to_planned_route[vehicle.id].insert(1, pickup_node)
-                    vehicle_id_to_planned_route[vehicle.id].insert(2, delivery_node)
-                else:
+                has_been_allocated = False
+                for v_id, v in id_to_vehicle.items():
+                    if len(vehicle_id_to_planned_route[v_id]) == 0 or len(vehicle_id_to_planned_route[v_id]) > 3:
+                        continue
+                    elif two_node_close(vehicle_id_to_planned_route[v_id][0], pickup_node) and (
+                        __calculate_demand(v.get_unloading_sequence()) + __calculate_demand(vehicle_id_to_planned_route[v_id][0].pickup_items) + demand < capacity):
+                        vehicle_id_to_planned_route[v_id].insert(1, pickup_node)
+                        vehicle_id_to_planned_route[v_id].insert(2, delivery_node)
+                        has_been_allocated = True
+                        break
+                if not has_been_allocated:
                     vehicle_id_to_planned_route[vehicle.id].append(pickup_node)
                     vehicle_id_to_planned_route[vehicle.id].append(delivery_node)
 
@@ -252,14 +257,17 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
                 continue
             vehicle = vehicles[vehicle_index]
 
-            if len(vehicle_id_to_planned_route[vehicle.id]) == 0:
-                vehicle_id_to_planned_route[vehicle.id].append(pickup_node)
-                vehicle_id_to_planned_route[vehicle.id].append(delivery_node)
-            elif two_node_close(vehicle_id_to_planned_route[vehicle.id][0], pickup_node) and (
-                    __calculate_demand(vehicle.get_unloading_sequence()) + demand) < capacity:
-                vehicle_id_to_planned_route[vehicle.id].insert(1, pickup_node)
-                vehicle_id_to_planned_route[vehicle.id].insert(2, delivery_node)
-            else:
+            has_been_allocated = False
+            for v_id, v in id_to_vehicle.items():
+                if len(vehicle_id_to_planned_route[v_id]) == 0 or len(vehicle_id_to_planned_route[v_id]) > 3:
+                    continue
+                elif two_node_close(vehicle_id_to_planned_route[v_id][0], pickup_node) and (
+                        __calculate_demand(v.get_unloading_sequence()) + __calculate_demand(vehicle_id_to_planned_route[v_id][0].pickup_items) + demand < capacity):
+                    vehicle_id_to_planned_route[v_id].insert(1, pickup_node)
+                    vehicle_id_to_planned_route[v_id].insert(2, delivery_node)
+                    has_been_allocated = True
+                    break
+            if not has_been_allocated:
                 vehicle_id_to_planned_route[vehicle.id].append(pickup_node)
                 vehicle_id_to_planned_route[vehicle.id].append(delivery_node)
 
