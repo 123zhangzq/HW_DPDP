@@ -118,6 +118,31 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
             if insert_pickup_node.pickup_items[0].creation_time - the_1st_node_in_planned_route.pickup_items[0].committed_completion_time < 2000:  # hyperparameter
                 return True
         return False
+
+    def select_nearest_vehicle(vehilce_list, insert_pickup_node: Node):
+        index_v = -1
+        distance = 1e7
+
+        index_non_des = -1
+        distance_non_des = 1e7
+
+        for i in range(len(vehilce_list)):
+            if vehilce_list[i].destination is None:
+                v_destination_id = vehilce_list[i].cur_factory_id
+                if distance_non_des > route_info.calculate_transport_time_between_factories(v_destination_id, insert_pickup_node.id):
+                    index_non_des = i
+                    distance_non_des = route_info.calculate_transport_time_between_factories(v_destination_id, insert_pickup_node.id)
+            else:
+                v_destination_id = vehilce_list[i].destination.id
+
+                if distance > route_info.calculate_transport_time_between_factories(v_destination_id, insert_pickup_node.id):
+                    index_v = i
+                    distance = route_info.calculate_transport_time_between_factories(v_destination_id, insert_pickup_node.id)
+
+        if index_non_des == -1:
+            return index_v
+        else:
+            return index_non_des
     ############################### test area end ############################
 
 
@@ -210,6 +235,8 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
                     pickup_node, delivery_node = __create_pickup_and_delivery_nodes_of_items(tmp_items, id_to_factory)
                     if pickup_node is None or delivery_node is None:
                         continue
+
+                    vehicle_index = select_nearest_vehicle(vehicles, pickup_node)
                     vehicle = vehicles[vehicle_index]
 
                     has_been_allocated = False
@@ -237,6 +264,8 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
                 pickup_node, delivery_node = __create_pickup_and_delivery_nodes_of_items(tmp_items, id_to_factory)
                 if pickup_node is None or delivery_node is None:
                     continue
+
+                vehicle_index = select_nearest_vehicle(vehicles, pickup_node)
                 vehicle = vehicles[vehicle_index]
 
                 has_been_allocated = False
@@ -258,6 +287,8 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
             pickup_node, delivery_node = __create_pickup_and_delivery_nodes_of_items(items, id_to_factory)
             if pickup_node is None or delivery_node is None:
                 continue
+
+            vehicle_index = select_nearest_vehicle(vehicles, pickup_node)
             vehicle = vehicles[vehicle_index]
 
             has_been_allocated = False
