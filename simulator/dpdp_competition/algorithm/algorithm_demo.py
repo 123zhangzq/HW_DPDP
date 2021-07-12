@@ -106,15 +106,18 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
 
 
     def two_node_close (node1: Node, node2: Node):
-        if route_info.calculate_transport_time_between_factories(node1.id,node2.id) < 500.0:  # hyperparameter
+        if route_info.calculate_transport_time_between_factories(node1.id,node2.id) < 500.0:  # hyperparameter, travel time
             return True
         return False
 
-    def two_order_time_close (order1):
-
-
-
-        return
+    def two_order_time_close (the_1st_node_in_planned_route: Node, insert_pickup_node: Node):
+        if the_1st_node_in_planned_route.delivery_items != []:
+            if insert_pickup_node.pickup_items[0].creation_time - the_1st_node_in_planned_route.delivery_items[0].committed_completion_time < 7200:  # hyperparameter
+                return True
+        if the_1st_node_in_planned_route.pickup_items != []:
+            if insert_pickup_node.pickup_items[0].creation_time - the_1st_node_in_planned_route.pickup_items[0].committed_completion_time < 2000:  # hyperparameter
+                return True
+        return False
     ############################### test area end ############################
 
 
@@ -211,9 +214,9 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
 
                     has_been_allocated = False
                     for v_id, v in id_to_vehicle.items():
-                        if len(vehicle_id_to_planned_route[v_id]) == 0 or len(vehicle_id_to_planned_route[v_id]) > 3:
+                        if len(vehicle_id_to_planned_route[v_id]) == 0 or len(vehicle_id_to_planned_route[v_id]) > 3:   # hyperparameter
                             continue
-                        elif two_node_close(vehicle_id_to_planned_route[v_id][0], pickup_node) and (
+                        elif two_node_close(vehicle_id_to_planned_route[v_id][0], pickup_node) and two_order_time_close(vehicle_id_to_planned_route[v_id][0], pickup_node) and (
                         __calculate_demand(v.get_unloading_sequence()) + __calculate_demand(vehicle_id_to_planned_route[v_id][0].pickup_items) + demand < capacity):
                             vehicle_id_to_planned_route[v_id].insert(1,pickup_node)
                             vehicle_id_to_planned_route[v_id].insert(2,delivery_node)
@@ -238,9 +241,9 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
 
                 has_been_allocated = False
                 for v_id, v in id_to_vehicle.items():
-                    if len(vehicle_id_to_planned_route[v_id]) == 0 or len(vehicle_id_to_planned_route[v_id]) > 3:
+                    if len(vehicle_id_to_planned_route[v_id]) == 0 or len(vehicle_id_to_planned_route[v_id]) > 3:    # hyperparameter
                         continue
-                    elif two_node_close(vehicle_id_to_planned_route[v_id][0], pickup_node) and (
+                    elif two_node_close(vehicle_id_to_planned_route[v_id][0], pickup_node) and two_order_time_close(vehicle_id_to_planned_route[v_id][0], pickup_node) and (
                         __calculate_demand(v.get_unloading_sequence()) + __calculate_demand(vehicle_id_to_planned_route[v_id][0].pickup_items) + demand < capacity):
                         vehicle_id_to_planned_route[v_id].insert(1, pickup_node)
                         vehicle_id_to_planned_route[v_id].insert(2, delivery_node)
@@ -259,9 +262,9 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
 
             has_been_allocated = False
             for v_id, v in id_to_vehicle.items():
-                if len(vehicle_id_to_planned_route[v_id]) == 0 or len(vehicle_id_to_planned_route[v_id]) > 3:
+                if len(vehicle_id_to_planned_route[v_id]) == 0 or len(vehicle_id_to_planned_route[v_id]) > 3:    # hyperparameter
                     continue
-                elif two_node_close(vehicle_id_to_planned_route[v_id][0], pickup_node) and (
+                elif two_node_close(vehicle_id_to_planned_route[v_id][0], pickup_node) and two_order_time_close(vehicle_id_to_planned_route[v_id][0], pickup_node) and (
                         __calculate_demand(v.get_unloading_sequence()) + __calculate_demand(vehicle_id_to_planned_route[v_id][0].pickup_items) + demand < capacity):
                     vehicle_id_to_planned_route[v_id].insert(1, pickup_node)
                     vehicle_id_to_planned_route[v_id].insert(2, delivery_node)
