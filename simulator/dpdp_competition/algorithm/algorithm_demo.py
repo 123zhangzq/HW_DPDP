@@ -115,7 +115,7 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
             if insert_pickup_node.pickup_items[0].creation_time - the_1st_node_in_planned_route.delivery_items[0].committed_completion_time < 9000:  # hyperparameter
                 return True
         if the_1st_node_in_planned_route.pickup_items != []:
-            if insert_pickup_node.pickup_items[0].creation_time - the_1st_node_in_planned_route.pickup_items[0].committed_completion_time < 1000:  # hyperparameter
+            if insert_pickup_node.pickup_items[0].creation_time - the_1st_node_in_planned_route.pickup_items[0].committed_completion_time < -4000:  # hyperparameter
                 return True
         return False
 
@@ -124,38 +124,54 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
 
         if unloading_sequence == []:
             return True
-        elif insert_pickup_node.pickup_items[0].creation_time - unloading_sequence[-1].committed_completion_time < 1000:  # hyperparameter
+        elif insert_pickup_node.pickup_items[0].creation_time - unloading_sequence[-1].committed_completion_time < -4000:  # hyperparameter
             return True
         return False
 
-    def select_nearest_vehicle(vehilce_list, insert_pickup_node: Node):
-        index_v = -1
-        distance = 1e7
+    def select_nearest_vehicle(vehilce_list, insert_pickup_node: Node, flag_vehicle_pointer = -1):
+        if flag_vehicle_pointer == -1:
+            index_v = -1
+            distance = 1e7
 
-        index_non_des = -1
-        distance_non_des = 1e7
+            index_non_des = -1
+            distance_non_des = 1e7
 
-        for i in range(len(vehilce_list)):
-            if vehilce_list[i].destination is None:
-                v_destination_id = vehilce_list[i].cur_factory_id
-                if distance_non_des > route_info.calculate_transport_time_between_factories(v_destination_id, insert_pickup_node.id):
-                    index_non_des = i
-                    distance_non_des = route_info.calculate_transport_time_between_factories(v_destination_id, insert_pickup_node.id)
+            for i in range(len(vehilce_list)):
+                if vehilce_list[i].destination is None:
+                    v_destination_id = vehilce_list[i].cur_factory_id
+                    if distance_non_des > route_info.calculate_transport_time_between_factories(v_destination_id, insert_pickup_node.id):
+                        index_non_des = i
+                        distance_non_des = route_info.calculate_transport_time_between_factories(v_destination_id, insert_pickup_node.id)
+                else:
+                    v_destination_id = vehilce_list[i].destination.id
+
+                    if distance > route_info.calculate_transport_time_between_factories(v_destination_id, insert_pickup_node.id):
+                        index_v = i
+                        distance = route_info.calculate_transport_time_between_factories(v_destination_id, insert_pickup_node.id)
+
+            if index_non_des == -1:
+                return index_v
             else:
-                v_destination_id = vehilce_list[i].destination.id
-
-                if distance > route_info.calculate_transport_time_between_factories(v_destination_id, insert_pickup_node.id):
-                    index_v = i
-                    distance = route_info.calculate_transport_time_between_factories(v_destination_id, insert_pickup_node.id)
-
-        if index_non_des == -1:
-            return index_v
+                return index_non_des
         else:
-            return index_non_des
+            index_v = -1
+            distance = 1e7
+            for i in range(len(vehilce_list)):
+
+                v_destination_id = vehicle_id_to_planned_route[vehilce_list[i].id][vehilce_list[i].pointer].id
+                1
+                if distance > route_info.calculate_transport_time_between_factories(v_destination_id,
+                                                                                    insert_pickup_node.id):
+                    index_v = i
+                    distance = route_info.calculate_transport_time_between_factories(v_destination_id,
+                                                                                     insert_pickup_node.id)
+            return index_v
+
+
     ############################### test area end ############################
 
     # hyperparameter
-    MAX_NODES_PR = 5
+    MAX_NODES_PR = 7
 
 
     vehicle_id_to_destination = {}
@@ -268,7 +284,7 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
                         vehicle_id_to_planned_route[vehicle.id].append(pickup_node)
                         vehicle_id_to_planned_route[vehicle.id].append(delivery_node)
                     else:
-                        vehicle_index = select_nearest_vehicle(v_candidate, pickup_node)
+                        vehicle_index = select_nearest_vehicle(v_candidate, pickup_node, 666)
                         vehicle = vehicles[vehicle_index]
                         vehicle_id_to_planned_route[vehicle.id].insert(vehicle.pointer+1, pickup_node)
                         vehicle_id_to_planned_route[vehicle.id].insert(vehicle.pointer+2, delivery_node)
@@ -309,7 +325,7 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
                     vehicle_id_to_planned_route[vehicle.id].append(pickup_node)
                     vehicle_id_to_planned_route[vehicle.id].append(delivery_node)
                 else:
-                    vehicle_index = select_nearest_vehicle(v_candidate, pickup_node)
+                    vehicle_index = select_nearest_vehicle(v_candidate, pickup_node, 666)
                     vehicle = vehicles[vehicle_index]
                     vehicle_id_to_planned_route[vehicle.id].insert(vehicle.pointer + 1, pickup_node)
                     vehicle_id_to_planned_route[vehicle.id].insert(vehicle.pointer + 2, delivery_node)
@@ -343,7 +359,7 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
                 vehicle_id_to_planned_route[vehicle.id].append(pickup_node)
                 vehicle_id_to_planned_route[vehicle.id].append(delivery_node)
             else:
-                vehicle_index = select_nearest_vehicle(v_candidate, pickup_node)
+                vehicle_index = select_nearest_vehicle(v_candidate, pickup_node, 666)
                 vehicle = vehicles[vehicle_index]
                 vehicle_id_to_planned_route[vehicle.id].insert(vehicle.pointer + 1, pickup_node)
                 vehicle_id_to_planned_route[vehicle.id].insert(vehicle.pointer + 2, delivery_node)
