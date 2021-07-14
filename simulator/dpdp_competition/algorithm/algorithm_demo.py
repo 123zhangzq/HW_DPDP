@@ -285,7 +285,7 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
                         vehicle_id_to_planned_route[vehicle.id].append(delivery_node)
                     else:
                         vehicle_index = select_nearest_vehicle(v_candidate, pickup_node, 666)
-                        vehicle = vehicles[vehicle_index]
+                        vehicle = v_candidate[vehicle_index]
                         vehicle_id_to_planned_route[vehicle.id].insert(vehicle.pointer+1, pickup_node)
                         vehicle_id_to_planned_route[vehicle.id].insert(vehicle.pointer+2, delivery_node)
                         vehicle.pointer += 1
@@ -326,7 +326,7 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
                     vehicle_id_to_planned_route[vehicle.id].append(delivery_node)
                 else:
                     vehicle_index = select_nearest_vehicle(v_candidate, pickup_node, 666)
-                    vehicle = vehicles[vehicle_index]
+                    vehicle = v_candidate[vehicle_index]
                     vehicle_id_to_planned_route[vehicle.id].insert(vehicle.pointer + 1, pickup_node)
                     vehicle_id_to_planned_route[vehicle.id].insert(vehicle.pointer + 2, delivery_node)
                     vehicle.pointer += 1
@@ -360,7 +360,7 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
                 vehicle_id_to_planned_route[vehicle.id].append(delivery_node)
             else:
                 vehicle_index = select_nearest_vehicle(v_candidate, pickup_node, 666)
-                vehicle = vehicles[vehicle_index]
+                vehicle = v_candidate[vehicle_index]
                 vehicle_id_to_planned_route[vehicle.id].insert(vehicle.pointer + 1, pickup_node)
                 vehicle_id_to_planned_route[vehicle.id].insert(vehicle.pointer + 2, delivery_node)
                 vehicle.pointer += 1
