@@ -159,7 +159,7 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
             for i in range(len(vehilce_list)):
 
                 v_destination_id = vehicle_id_to_planned_route[vehilce_list[i].id][vehilce_list[i].pointer].id
-                1
+
                 if distance > route_info.calculate_transport_time_between_factories(v_destination_id,
                                                                                     insert_pickup_node.id):
                     index_v = i
