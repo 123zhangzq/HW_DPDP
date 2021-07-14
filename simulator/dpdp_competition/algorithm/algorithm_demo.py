@@ -261,7 +261,7 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
             cur_demand = 0
             tmp_items = []
             for item in order_id_to_items[order_id]:
-                if cur_demand + item.demand > capacity:
+                if cur_demand + item.demand > 1.0 * capacity:   # hyperparameter
                     pickup_node, delivery_node = __create_pickup_and_delivery_nodes_of_items(tmp_items, id_to_factory)
                     if pickup_node is None or delivery_node is None:
                         continue
