@@ -1,4 +1,4 @@
-# v3.0.1
+# v3.1.0
 
 # Copyright (C) 2021. Huawei Technologies Co., Ltd. All rights reserved.
 #
@@ -194,15 +194,57 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
     pre_matching_item_ids = []
     for vehicle_id, vehicle in id_to_vehicle.items():
         if vehicle.carrying_items.is_empty() and vehicle.destination is not None:
-            pickup_items = vehicle.destination.pickup_items
-            pickup_node, delivery_node = __create_pickup_and_delivery_nodes_of_items(pickup_items, id_to_factory)
-            vehicle_id_to_planned_route[vehicle_id].append(delivery_node)
-            pre_matching_item_ids.extend([item.id for item in pickup_items])
+            lis = vehicle.destination.pickup_items
+            ret = []
+            cur = []
+            cur_s = lis[0].id.split('-')[0]
+            for i in range(len(lis)):
+                if cur_s == lis[i].id.split('-')[0]:
+                    cur.append(lis[i])
+                else:
+                    ret.append(cur)
+                    cur_s = lis[i].id.split('-')[0]
+                    cur = []
+                    cur.append(lis[i])
+            ret.append(cur)
+
+            deli_n_rever = []
+            for i in range(len(ret)):
+
+
+                pickup_items = ret[i]
+                pickup_node, delivery_node = __create_pickup_and_delivery_nodes_of_items(pickup_items, id_to_factory)
+                # vehicle_id_to_planned_route[vehicle_id].append(delivery_node)
+                pre_matching_item_ids.extend([item.id for item in pickup_items])
+                deli_n_rever.append(delivery_node)
+            for i in deli_n_rever[::-1]:
+                vehicle_id_to_planned_route[vehicle_id].append(i)
+
+
         elif vehicle.destination is not None and vehicle.destination.pickup_items != []:   # for those same-location delivery and then pickup
-            pickup_items = vehicle.destination.pickup_items
-            pickup_node, delivery_node = __create_pickup_and_delivery_nodes_of_items(pickup_items, id_to_factory)
-            vehicle_id_to_planned_route[vehicle_id].append(delivery_node)
-            pre_matching_item_ids.extend([item.id for item in pickup_items])
+            lis = vehicle.destination.pickup_items
+            ret = []
+            cur = []
+            cur_s = lis[0].id.split('-')[0]
+            for i in range(len(lis)):
+                if cur_s == lis[i].id.split('-')[0]:
+                    cur.append(lis[i])
+                else:
+                    ret.append(cur)
+                    cur_s = lis[i].id.split('-')[0]
+                    cur = []
+                    cur.append(lis[i])
+            ret.append(cur)
+
+            deli_n_rever = []
+            for i in range(len(ret)):
+                pickup_items = ret[i]
+                pickup_node, delivery_node = __create_pickup_and_delivery_nodes_of_items(pickup_items, id_to_factory)
+                # vehicle_id_to_planned_route[vehicle_id].append(delivery_node)
+                pre_matching_item_ids.extend([item.id for item in pickup_items])
+                deli_n_rever.append(delivery_node)
+            for i in deli_n_rever[::-1]:
+                vehicle_id_to_planned_route[vehicle_id].append(i)
 
 
 
@@ -391,7 +433,7 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
     for vehicle_id, vehicle in id_to_vehicle.items():
         origin_planned_route = vehicle_id_to_planned_route.get(vehicle_id)
         # Combine adjacent-duplicated nodes.
-        # __combine_duplicated_nodes(origin_planned_route)
+        __combine_duplicated_nodes(origin_planned_route)
 
         destination = None
         planned_route = []
@@ -474,9 +516,16 @@ def __get_delivery_factory_id(items):
 # 合并相邻重复节点 Combine adjacent-duplicated nodes.
 def __combine_duplicated_nodes(nodes):
     n = 0
+
     while n < len(nodes)-1:
+        if nodes[n+1] == None:
+            nodes.pop(n+1)
+            n += 1
+            continue
         if nodes[n].id == nodes[n+1].id:
+            nodes[n].delivery_items.extend(nodes[n+1].delivery_items)
             nodes[n].pickup_items.extend(nodes.pop(n+1).pickup_items)
+            continue
         n += 1
 
 
