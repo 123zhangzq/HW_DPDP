@@ -1,4 +1,4 @@
-# v3.2.1
+# v3.3.1
 
 # Copyright (C) 2021. Huawei Technologies Co., Ltd. All rights reserved.
 #
@@ -111,7 +111,7 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
     # my functions
 
     def two_node_close(node1: Node, node2: Node):
-        if route_info.calculate_transport_time_between_factories(node1.id, node2.id) < 100.0:  # hyperparameter, travel time
+        if route_info.calculate_transport_time_between_factories(node1.id, node2.id) < 150.0:  # hyperparameter, travel time
             return True
         return False
 
@@ -120,7 +120,7 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
             if insert_pickup_node.pickup_items[0].creation_time - the_1st_node_in_planned_route.delivery_items[0].committed_completion_time < 9000:  # hyperparameter
                 return True
         if the_1st_node_in_planned_route.pickup_items != []:
-            if insert_pickup_node.pickup_items[0].creation_time - the_1st_node_in_planned_route.pickup_items[0].committed_completion_time < -5000:  # hyperparameter
+            if insert_pickup_node.pickup_items[0].creation_time - the_1st_node_in_planned_route.pickup_items[0].committed_completion_time < -7000:  # hyperparameter
                 return True
         return False
 
@@ -129,7 +129,7 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
 
         if unloading_sequence == []:
             return True
-        elif insert_pickup_node.pickup_items[0].creation_time - unloading_sequence[-1].committed_completion_time < -5000:  # hyperparameter
+        elif insert_pickup_node.pickup_items[0].creation_time - unloading_sequence[-1].committed_completion_time < -7000:  # hyperparameter
             return True
         return False
 
@@ -184,21 +184,48 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
     # copy destination from last time slot t_i-1
     # by making sure destination of each vehicle put at the first vehicle_id_to_planned_route in current time slot t_i
     vehicle_number = 0
+    id_to_factory_vehi_number = {}
+
     for vehicle_id, vehicle in id_to_vehicle.items():
         vehicle_id_to_planned_route[vehicle_id] = []
         if vehicle.destination != None:
             vehicle_id_to_planned_route[vehicle_id].append(vehicle.destination)
+
+            if vehicle.destination.id not in id_to_factory_vehi_number:
+                id_to_factory_vehi_number[vehicle.destination.id] = 1
+            else:
+                id_to_factory_vehi_number[vehicle.destination.id] += 1
+        else:
+            if vehicle.cur_factory_id not in id_to_factory_vehi_number:
+                id_to_factory_vehi_number[vehicle.cur_factory_id] = 1
+            else:
+                id_to_factory_vehi_number[vehicle.cur_factory_id] += 1
+
         vehicle.pointer = 0
         vehicle_number += 1
 
 
+
+
     ############################## hyperparameter start ############################
     # need vehicle_number calculation above, so put hyperpara here
-    MAX_NODES_PR = 7
+    MAX_NODES_PR = 14
 
-    ignore_min_orders =  vehicle_number * 3
-    ignore_time = 3 * 3600
+    ignore_min_orders =  vehicle_number * 5
+    ignore_time = 2.5 * 3600
+
+    Max_v_num_in_dock = __get_fact_dock_num(id_to_factory) + 2
     ############################## hyperparameter end ############################
+
+
+
+    # build congestion dock list
+    conge_dock_node_list = []
+    for fact_id, v_in_dock_num in id_to_factory_vehi_number.items():
+        if v_in_dock_num > Max_v_num_in_dock:
+            conge_dock_node_list.append(fact_id)
+
+
 
 
 
@@ -315,6 +342,10 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
 
     for order_id in order_reverse_id:
 
+        conge_order_flag = False
+        if (order_id_to_items[order_id][0].pickup_factory_id in conge_dock_node_list) and (unallocated_orderItems_number > ignore_min_orders):
+            conge_order_flag = True
+
         demand = __calculate_demand(order_id_to_items[order_id])
         if demand > capacity:
             cur_demand = 0
@@ -327,16 +358,18 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
 
                     v_candidate = []
                     v_non_des = [vehi_non_des for vehi_non_des in id_to_vehicle.values() if ((vehi_non_des.destination == None) and (vehicle_id_to_planned_route[vehi_non_des.id] == []))]
-                    for v_id, v in id_to_vehicle.items():
-                        if len(vehicle_id_to_planned_route[v_id]) == 0 or len(vehicle_id_to_planned_route[v_id]) > MAX_NODES_PR:
-                            continue
-                        else:
-                            will_pickup = []
-                            for i in range(v.pointer + 1):
-                                will_pickup.extend(vehicle_id_to_planned_route[v_id][i].pickup_items)
-                            if two_node_close(vehicle_id_to_planned_route[v_id][v.pointer], pickup_node) and two_order_time_close(vehicle_id_to_planned_route[v_id][0], pickup_node) and (
-                        __calculate_demand(v.get_unloading_sequence()) + __calculate_demand(will_pickup) + demand < capacity) and carring_items_time_close(v, pickup_node):
-                                v_candidate.append(v)
+
+                    if not conge_order_flag:
+                        for v_id, v in id_to_vehicle.items():
+                            if len(vehicle_id_to_planned_route[v_id]) == 0 or len(vehicle_id_to_planned_route[v_id]) > MAX_NODES_PR:
+                                continue
+                            else:
+                                will_pickup = []
+                                for i in range(v.pointer + 1):
+                                    will_pickup.extend(vehicle_id_to_planned_route[v_id][i].pickup_items)
+                                if two_node_close(vehicle_id_to_planned_route[v_id][v.pointer], pickup_node) and two_order_time_close(vehicle_id_to_planned_route[v_id][0], pickup_node) and (
+                            __calculate_demand(v.get_unloading_sequence()) + __calculate_demand(will_pickup) + demand < capacity) and carring_items_time_close(v, pickup_node):
+                                    v_candidate.append(v)
 
                     if (v_non_des == []) and (unallocated_orderItems_number > ignore_min_orders):
                         if item.committed_completion_time - route_info.calculate_transport_time_between_factories(item.pickup_factory_id, item.delivery_factory_id) - current_time > ignore_time:
@@ -376,20 +409,22 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
                 v_non_des = [vehi_non_des for vehi_non_des in id_to_vehicle.values() if (
                             (vehi_non_des.destination == None) and (
                                 vehicle_id_to_planned_route[vehi_non_des.id] == []))]
-                for v_id, v in id_to_vehicle.items():
-                    if len(vehicle_id_to_planned_route[v_id]) == 0 or len(
-                            vehicle_id_to_planned_route[v_id]) > MAX_NODES_PR:
-                        continue
-                    else:
-                        will_pickup = []
-                        for i in range(v.pointer + 1):
-                            will_pickup.extend(vehicle_id_to_planned_route[v_id][i].pickup_items)
-                        if two_node_close(vehicle_id_to_planned_route[v_id][v.pointer],
-                                          pickup_node) and two_order_time_close(vehicle_id_to_planned_route[v_id][0],
-                                                                                pickup_node) and (
-                                __calculate_demand(v.get_unloading_sequence()) + __calculate_demand(
-                            will_pickup) + demand < capacity) and carring_items_time_close(v, pickup_node):
-                            v_candidate.append(v)
+
+                if not conge_order_flag:
+                    for v_id, v in id_to_vehicle.items():
+                        if len(vehicle_id_to_planned_route[v_id]) == 0 or len(
+                                vehicle_id_to_planned_route[v_id]) > MAX_NODES_PR:
+                            continue
+                        else:
+                            will_pickup = []
+                            for i in range(v.pointer + 1):
+                                will_pickup.extend(vehicle_id_to_planned_route[v_id][i].pickup_items)
+                            if two_node_close(vehicle_id_to_planned_route[v_id][v.pointer],
+                                              pickup_node) and two_order_time_close(
+                                    vehicle_id_to_planned_route[v_id][0], pickup_node) and (
+                                    __calculate_demand(v.get_unloading_sequence()) + __calculate_demand(
+                                will_pickup) + demand < capacity) and carring_items_time_close(v, pickup_node):
+                                v_candidate.append(v)
 
                 if (v_non_des == []) and (unallocated_orderItems_number > ignore_min_orders):
                     if item.committed_completion_time - route_info.calculate_transport_time_between_factories(
@@ -422,19 +457,22 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
             v_candidate = []
             v_non_des = [vehi_non_des for vehi_non_des in id_to_vehicle.values() if
                          ((vehi_non_des.destination == None) and (vehicle_id_to_planned_route[vehi_non_des.id] == []))]
-            for v_id, v in id_to_vehicle.items():
-                if len(vehicle_id_to_planned_route[v_id]) == 0 or len(vehicle_id_to_planned_route[v_id]) > MAX_NODES_PR:
-                    continue
-                else:
-                    will_pickup = []
-                    for i in range(v.pointer + 1):
-                        will_pickup.extend(vehicle_id_to_planned_route[v_id][i].pickup_items)
-                    if two_node_close(vehicle_id_to_planned_route[v_id][v.pointer],
-                                      pickup_node) and two_order_time_close(vehicle_id_to_planned_route[v_id][0],
-                                                                            pickup_node) and (
-                            __calculate_demand(v.get_unloading_sequence()) + __calculate_demand(
-                        will_pickup) + demand < capacity) and carring_items_time_close(v, pickup_node):
-                        v_candidate.append(v)
+
+            if not conge_order_flag:
+                for v_id, v in id_to_vehicle.items():
+                    if len(vehicle_id_to_planned_route[v_id]) == 0 or len(
+                            vehicle_id_to_planned_route[v_id]) > MAX_NODES_PR:
+                        continue
+                    else:
+                        will_pickup = []
+                        for i in range(v.pointer + 1):
+                            will_pickup.extend(vehicle_id_to_planned_route[v_id][i].pickup_items)
+                        if two_node_close(vehicle_id_to_planned_route[v_id][v.pointer],
+                                          pickup_node) and two_order_time_close(vehicle_id_to_planned_route[v_id][0],
+                                                                                pickup_node) and (
+                                __calculate_demand(v.get_unloading_sequence()) + __calculate_demand(
+                            will_pickup) + demand < capacity) and carring_items_time_close(v, pickup_node):
+                            v_candidate.append(v)
 
             if (v_non_des == []) and (unallocated_orderItems_number > ignore_min_orders):
                 if item.committed_completion_time - route_info.calculate_transport_time_between_factories(
@@ -500,6 +538,10 @@ def __get_capacity_of_vehicle(id_to_vehicle: dict):
 def __get_current_time(id_to_vehicle: dict):
     for vehicle_id, vehicle in id_to_vehicle.items():
         return vehicle.gps_update_time
+
+def __get_fact_dock_num(id_to_factory: dict):
+    for f_id, f in id_to_factory.items():
+        return f.dock_num
 
 
 def __create_pickup_and_delivery_nodes_of_items(items: list, id_to_factory: dict):
