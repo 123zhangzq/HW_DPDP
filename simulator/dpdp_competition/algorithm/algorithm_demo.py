@@ -111,7 +111,7 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
     # my functions
 
     def two_node_close(node1: Node, node2: Node):
-        if route_info.calculate_transport_time_between_factories(node1.id, node2.id) < 150.0:  # hyperparameter, travel time
+        if route_info.calculate_transport_time_between_factories(node1.id, node2.id) < 300.0:  # hyperparameter, travel time
             return True
         return False
 
@@ -120,7 +120,7 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
             if insert_pickup_node.pickup_items[0].creation_time - the_1st_node_in_planned_route.delivery_items[0].committed_completion_time < 9000:  # hyperparameter
                 return True
         if the_1st_node_in_planned_route.pickup_items != []:
-            if insert_pickup_node.pickup_items[0].creation_time - the_1st_node_in_planned_route.pickup_items[0].committed_completion_time < -7000:  # hyperparameter
+            if insert_pickup_node.pickup_items[0].creation_time - the_1st_node_in_planned_route.pickup_items[0].committed_completion_time < -10000:  # hyperparameter
                 return True
         return False
 
@@ -129,7 +129,7 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
 
         if unloading_sequence == []:
             return True
-        elif insert_pickup_node.pickup_items[0].creation_time - unloading_sequence[-1].committed_completion_time < -7000:  # hyperparameter
+        elif insert_pickup_node.pickup_items[0].creation_time - unloading_sequence[-1].committed_completion_time < -10000:  # hyperparameter
             return True
         return False
 
@@ -211,10 +211,10 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
     # need vehicle_number calculation above, so put hyperpara here
     MAX_NODES_PR = 14
 
-    ignore_min_orders =  vehicle_number * 5
-    ignore_time = 2.5 * 3600
+    ignore_min_orders =  vehicle_number * 10
+    ignore_time = 1 * 3600
 
-    Max_v_num_in_dock = __get_fact_dock_num(id_to_factory) + 2
+    Max_v_num_in_dock = __get_fact_dock_num(id_to_factory) + 0
     ############################## hyperparameter end ############################
 
 
@@ -497,6 +497,56 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
                 vehicle.pointer += 1
 
 
+
+    # # local search
+    # # functions
+    # def get_route_length(planned_route: list):
+    #     l = 0
+    #
+    #     for i in range(len(planned_route) - 1):
+    #         l += route_info.calculate_transport_time_between_factories(planned_route[i].id, planned_route[i+1].id)
+    #     return l
+    #
+    # def is_capacity_feasible(planned_route: list, carrying_items, capacity):
+    #     copy_carrying_items = copy.deepcopy(carrying_items)
+    #     left_capacity = capacity
+    #     # Stack
+    #     while not copy_carrying_items.is_empty():
+    #         item = copy_carrying_items.pop()
+    #         left_capacity -= item.demand
+    #         if left_capacity < 0:
+    #             #logger.error(f"left capacity {left_capacity} < 0")
+    #             return False
+    #     for node in planned_route:
+    #         delivery_items = node.delivery_items
+    #         pickup_items = node.pickup_items
+    #         for item in delivery_items:
+    #             left_capacity += item.demand
+    #             if left_capacity > capacity:
+    #                 #logger.error(f"left capacity {left_capacity} > capacity {capacity}")
+    #                 return False
+    #         for item in pickup_items:
+    #             left_capacity -= item.demand
+    #             if left_capacity < 0:
+    #                 #logger.error(f"left capacity {left_capacity} < 0")
+    #                 return False
+    #     return True
+    #
+    # def FILO_possible_location(planned_route: list, index_move):
+    #     for i in range(len(planned_route)):
+    #         if
+    #
+    #
+    #
+    # def local_search(planned_route: list):
+    #
+    #     return
+    #
+    #
+    # # start local search
+    # for v_id, v_pr in vehicle_id_to_planned_route.items():
+    #     for i in range(len(v_pr)):
+    #         local_search(v_pr)
 
     # create the output of the algorithm
     for vehicle_id, vehicle in id_to_vehicle.items():
