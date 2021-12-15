@@ -1,4 +1,4 @@
-# v4.0
+# v4.0.0
 
 # Copyright (C) 2021. Huawei Technologies Co., Ltd. All rights reserved.
 #
