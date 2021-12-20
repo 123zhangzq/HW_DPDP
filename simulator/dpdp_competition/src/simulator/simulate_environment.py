@@ -153,6 +153,7 @@ class SimulateEnvironment(object):
         # 更新车辆状态
         self.update_status_of_vehicles(self.vehicle_simulator.vehicle_id_to_cur_position_info,
                                        self.vehicle_simulator.vehicle_id_to_destination,
+                                       self.vehicle_simulator.vehicle_id_to_rest_planned_routes,
                                        self.vehicle_simulator.vehicle_id_to_carrying_items)
 
         # 根据当前时间选择待分配订单的物料集合
@@ -195,7 +196,7 @@ class SimulateEnvironment(object):
             self.id_to_ongoing_order_item.pop(item_id)
 
     # 更新车辆状态
-    def update_status_of_vehicles(self, vehicle_id_to_cur_position_info, vehicle_id_to_destination,
+    def update_status_of_vehicles(self, vehicle_id_to_cur_position_info, vehicle_id_to_destination, vehicle_id_to_rest_planned_routes,
                                   vehicle_id_to_carry_items):
         for vehicle_id, vehicle in self.id_to_vehicle.items():
             if vehicle_id in vehicle_id_to_cur_position_info:
@@ -217,7 +218,7 @@ class SimulateEnvironment(object):
             else:
                 logger.error(f"Vehicle {vehicle_id} does not have the information of carrying items")
 
-            vehicle.planned_route = []
+            vehicle.planned_route = vehicle_id_to_rest_planned_routes.get(vehicle_id)
 
     # 派单环节
     def dispatch(self, input_info):

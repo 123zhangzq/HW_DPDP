@@ -127,6 +127,10 @@ def __get_vehicle_info_list(id_to_vehicle: dict):
 def __convert_vehicle_to_dict(vehicle):
     carrying_items = vehicle.get_loading_sequence()
 
+    planned_routes = []
+    for i in vehicle.planned_route:
+        planned_routes.append(__convert_destination_to_dict(i))
+
     vehicle_property = {
         "id": vehicle.id,
         "operation_time": vehicle.operation_time,
@@ -137,7 +141,8 @@ def __convert_vehicle_to_dict(vehicle):
         "arrive_time_at_current_factory": vehicle.arrive_time_at_current_factory,
         "leave_time_at_current_factory": vehicle.leave_time_at_current_factory,
         "carrying_items": [item.id for item in carrying_items],
-        "destination": __convert_destination_to_dict(vehicle.destination)
+        "destination": __convert_destination_to_dict(vehicle.destination),
+        "planned_routes":planned_routes
     }
     return vehicle_property
 

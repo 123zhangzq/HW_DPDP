@@ -37,6 +37,7 @@ class VehicleSimulator(object):
         self.ongoing_item_ids = []
         self.completed_item_ids = []
         self.vehicle_id_to_destination = {}
+        self.vehicle_id_to_rest_planned_routes = {}
         self.vehicle_id_to_cur_position_info = {}
         self.vehicle_id_to_carrying_items = {}
 
@@ -163,6 +164,7 @@ class VehicleSimulator(object):
 
         self.get_position_info_of_vehicles(id_to_vehicle, to_time)
         self.get_destination_of_vehicles(id_to_vehicle, to_time)
+        self.get_rest_planned_routes_of_vehicles(id_to_vehicle, to_time)
         self.get_loading_and_unloading_result_of_vehicles(id_to_vehicle, to_time)
 
     def get_position_info_of_vehicles(self, id_to_vehicle: dict, to_time: int):
@@ -208,6 +210,23 @@ class VehicleSimulator(object):
                         destination = node
                         break
                 self.vehicle_id_to_destination[vehicle_id] = destination
+
+
+    def get_rest_planned_routes_of_vehicles(self, id_to_vehicle: dict, to_time: int):
+        for vehicle_id, vehicle in id_to_vehicle.items():
+            self.vehicle_id_to_rest_planned_routes[vehicle_id] = []
+            if vehicle.destination is None:
+                continue
+            elif vehicle.destination.arrive_time > to_time:
+                self.vehicle_id_to_rest_planned_routes[vehicle_id] = vehicle.planned_route
+            else:
+                for node in vehicle.planned_route:
+                    if node.arrive_time > to_time:
+                        self.vehicle_id_to_rest_planned_routes[vehicle_id].append(node)
+                # remove the first node which is the destination
+                self.vehicle_id_to_rest_planned_routes[vehicle_id] = self.vehicle_id_to_rest_planned_routes[vehicle_id][1:]
+
+
 
     def get_loading_and_unloading_result_of_vehicles(self, id_to_vehicle: dict, to_time: int):
         for vehicle_id, vehicle in id_to_vehicle.items():
