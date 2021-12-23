@@ -28,7 +28,7 @@ from src.utils.json_tools import convert_nodes_to_json
 from src.utils.json_tools import get_vehicle_instance_dict, get_order_item_dict
 from src.utils.json_tools import read_json_from_file, write_json_to_file
 from src.utils.logging_engine import logger
-
+import Order_Info as Oinfo
 
 # naive dispatching method
 def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicle: dict, id_to_factory: dict):
@@ -224,8 +224,16 @@ Main body
 
 
 def scheduling():
+
     # read the input json, you can design your own classes
     id_to_factory, id_to_unallocated_order_item, id_to_ongoing_order_item, id_to_vehicle = __read_input_json()
+
+    ############test##########
+    Oinfo.write_info_to_file(Configs.algorithm_output_order_info_path, id_to_unallocated_order_item['0010110042-1'].id)
+    list_test = Oinfo.read_item_list(Configs.algorithm_output_order_info_path)
+    print(list_test)
+
+    ###########################
 
     # dispatching algorithm
     vehicle_id_to_destination, vehicle_id_to_planned_route = dispatch_orders_to_vehicles(
