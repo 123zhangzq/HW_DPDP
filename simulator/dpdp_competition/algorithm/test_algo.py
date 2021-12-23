@@ -1,4 +1,7 @@
-# v4.0.2
+# v20211223
+#添加class数据 bags 见line 35-41
+#添加借鉴silver的split列表 line 48-88
+#添加pack_bags funstion 未测试，见line 92-156
 
 # Copyright (C) 2021. Huawei Technologies Co., Ltd. All rights reserved.
 #
@@ -31,6 +34,127 @@ from src.utils.json_tools import get_vehicle_instance_dict, get_order_item_dict
 from src.utils.json_tools import read_json_from_file, write_json_to_file
 from src.utils.logging_engine import logger
 
+
+
+class bag(object):
+   def __init__(self, bag_id: int, bag_location: str, bag_end: str, bag_delivery_list: list, bag_planned_route: str, bag_demand:float):
+    self.id = bag_id
+    self.location = bag_location
+    self.end = bag_end
+    self.delivery_list = bag_delivery_list
+    self.planned_route = bag_planned_route
+    self.demand = bag_demand
+
+
+ '''
+        Order (items) can be Split or Not?
+    '''
+    can_split = {}
+    cannot_split = {}
+    try:
+        old_order_id = id_to_unallocated_order_item[list(id_to_unallocated_order_item)[0]].order_id
+    except:
+        old_order_id = None
+    now_order_demand = 0
+
+    end_of_dict = len(list(id_to_unallocated_order_item)) - 1
+    temp_cnt = 0
+    for k,v in id_to_unallocated_order_item.items():
+        if v.order_id == old_order_id and temp_cnt != end_of_dict:
+            now_order_demand += v.demand
+        elif v.order_id != old_order_id and temp_cnt != end_of_dict:
+            if now_order_demand > 15:
+                can_split[old_order_id] = now_order_demand
+            else:
+                cannot_split[old_order_id] = now_order_demand
+            old_order_id = v.order_id
+            now_order_demand = v.demand
+        elif v.order_id == old_order_id and temp_cnt == end_of_dict:
+            now_order_demand += v.demand
+            if now_order_demand > 15:
+                can_split[old_order_id] = now_order_demand
+            else:
+                cannot_split[old_order_id] = now_order_demand
+        elif v.order_id != old_order_id and temp_cnt == end_of_dict:
+            if now_order_demand > 15:
+                can_split[old_order_id] = now_order_demand
+            else:
+                cannot_split[old_order_id] = now_order_demand
+            old_order_id = v.order_id
+            now_order_demand = v.demand
+            if now_order_demand > 15:
+                can_split[old_order_id] = now_order_demand
+            else:
+                cannot_split[old_order_id] = now_order_demand
+        temp_cnt += 1
+
+
+
+def pack_bags(id_to_unallocated_order_item: dict, id_to_vehicle: dict, id_to_factory: dict, route_map, can_split: dict, cannot_split:dict ):
+    bags = {}
+    bags_num = 0    #需要打包的数量
+
+    #计算需要打包的数量，空车数量
+    for vehicle_id, vehicle in id_to_vehicle.items():
+        if vehicle.carrying_items.is_empty()
+            bags_num=+1
+
+    #开始打包
+    i=1
+    bag_id_to_destination = {}
+    bag_id_to_planned_route = {}
+    cur_unallocated_order_item = copy.copy(id_to_unallocated_order_item)
+    while i <= bags_num:
+        bags[i] = bag()
+        bags[i].location = cur_unallocated_order_item[0].pickup_factory_id
+        bags[i].end = cur_unallocated_order_item[0].delivery_factory_id     #暂时赋值
+
+        bags[i].demand = 0
+        capacity_remain = vehicle.board_capacity
+        delivery_item_list = []
+        for item in id_to_unallocated_order_item:
+            cur_demand = 0
+            if item.pickup_factory_id == bags[i].location and item.delivery_factory_id == bags[i].end:
+                cur_demand = bags[i].demand
+                if  item.order_id in list(cannot_split):   #借鉴silver的拆分列表
+                    cur_demand = cur_damend + cannot_split[item.order_id]
+                    cur_order_id = item.order_id
+                   if cur_demand <= 15:
+                       for item in id_to_unallocated_order_item:
+                           if item.order_id == cur_order_id:
+                               delivery_item_list.append(item)
+                               capacity_remain = capacity_remain - item.demand
+                    else:
+                        cur_demand = bags[i].deamnd
+                        continue
+                elif item.order_id in list(can_split):
+                    capacity_remain = vehicle.board_capacity - cur_demand
+                    while capacity_remain > 0:
+                        for item in id_to_unallocated_order_item.get(item.order_id):
+                            cur_demand = cur_demand + item.demand
+                            if cur_demand < 15:
+                                delivery_item_list.append(item)
+                            elif cur_demand == 15:
+                                delivery_item_list.append(item)
+                                break
+                            else:
+                                cur_demand = bags[i].demand
+                                continue
+            #if #可以增加近似点打包策略
+
+        factory = id_to_factory.get(bags[i].location)
+        delivery_item_list.reverse()  #转换顺序
+        node = Node(factory_id, factory.lng, factory.lat, [], copy.copy(delivery_item_list))
+        bags[i].planned_route.append(node)
+
+        bags[i].location = bags[i].location
+        bags[i].delivery_list = delivery_item_list
+
+        bags[i].demand = cur_demand
+
+
+        i=+1
+        return bags
 
 # naive dispatching method
 def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicle: dict, id_to_factory: dict, route_info:Map):
