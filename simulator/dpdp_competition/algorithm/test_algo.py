@@ -157,7 +157,7 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
                 if item.pickup_factory_id == bags[i].location and item.delivery_factory_id == bags[i].end:
                     cur_demand = bags[i].demand
                     if item.order_id in list(cannot_split):  # 借鉴silver的拆分列表
-                        cur_demand = cur_damend + cannot_split[item.order_id]
+                        cur_demand = cur_demand + cannot_split[item.order_id]
                         cur_order_id = item.order_id
 
                     if cur_demand <= 15:
