@@ -31,7 +31,7 @@ from src.utils.logging_engine import logger
 import Order_Info as Oinfo
 
 # naive dispatching method
-def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicle: dict, id_to_factory: dict):
+def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicle: dict, id_to_factory: dict, route_info:Map):
     """
     :param id_to_unallocated_order_item: item_id ——> OrderItem object(state: "GENERATED")
     :param id_to_vehicle: vehicle_id ——> Vehicle object
@@ -226,10 +226,10 @@ Main body
 def scheduling():
 
     # read the input json, you can design your own classes
-    id_to_factory, id_to_unallocated_order_item, id_to_ongoing_order_item, id_to_vehicle = __read_input_json()
+    id_to_factory, id_to_unallocated_order_item, id_to_ongoing_order_item, id_to_vehicle, route_info = __read_input_json()
 
     ############test##########
-    Oinfo.write_info_to_file(Configs.algorithm_output_order_info_path, id_to_unallocated_order_item['0010110042-1'].id)
+    Oinfo.write_info_to_file(Configs.algorithm_output_order_info_path, id_to_unallocated_order_item['0000030001-1'].id)
     list_test = Oinfo.read_item_list(Configs.algorithm_output_order_info_path)
     print(list_test)
 
@@ -239,7 +239,8 @@ def scheduling():
     vehicle_id_to_destination, vehicle_id_to_planned_route = dispatch_orders_to_vehicles(
         id_to_unallocated_order_item,
         id_to_vehicle,
-        id_to_factory)
+        id_to_factory,
+        route_info)
 
     # output the dispatch result
     __output_json(vehicle_id_to_destination, vehicle_id_to_planned_route)
@@ -250,8 +251,8 @@ def __read_input_json():
     id_to_factory = get_factory_info(Configs.factory_info_file_path)
 
     # read the route map
-    # code_to_route = get_route_map(Configs.route_info_file_path)
-    # route_map = Map(code_to_route)
+    code_to_route = get_route_map(Configs.route_info_file_path)
+    route_map = Map(code_to_route)
 
     # read the input json, you can design your own classes
     unallocated_order_items = read_json_from_file(Configs.algorithm_unallocated_order_items_input_path)
@@ -265,7 +266,7 @@ def __read_input_json():
     vehicle_infos = read_json_from_file(Configs.algorithm_vehicle_input_info_path)
     id_to_vehicle = get_vehicle_instance_dict(vehicle_infos, id_to_order_item, id_to_factory)
 
-    return id_to_factory, id_to_unallocated_order_item, id_to_ongoing_order_item, id_to_vehicle
+    return id_to_factory, id_to_unallocated_order_item, id_to_ongoing_order_item, id_to_vehicle, route_map
 
 
 def __output_json(vehicle_id_to_destination, vehicle_id_to_planned_route):

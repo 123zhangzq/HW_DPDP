@@ -21,7 +21,7 @@
 import traceback
 import datetime
 import numpy as np
-import sys
+import sys, os
 
 from src.conf.configs import Configs
 from src.simulator.simulate_api import simulate
@@ -48,6 +48,9 @@ if __name__ == "__main__":
         logger.info(f"Start to run {instance}")
 
         try:
+            # 删除追加写入交互文件
+            if (os.path.exists(Configs.algorithm_output_order_info_path)):
+                os.remove(Configs.algorithm_output_order_info_path)
             score = simulate(Configs.factory_info_file, Configs.route_info_file, instance)
             score_list.append(score)
             logger.info(f"Score of {instance}: {score}")
