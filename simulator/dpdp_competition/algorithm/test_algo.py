@@ -1,4 +1,4 @@
-# v20211223
+# v20211230
 #添加class数据 bags 见line 35-41
 #添加借鉴silver的split列表 line 264-300
 #添加pack_bags funstion 未测试，见my function
@@ -130,7 +130,7 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
 
 
     # my functions
-    def pack_bags(id_to_unallocated_order_item: dict, id_to_vehicle: dict, id_to_factory: dict, route_map,
+    def pack_bags(id_to_unallocated_order_item: dict, id_to_vehicle: dict, id_to_factory: dict,
                   can_split: dict, cannot_split: dict):
         bags = {}
         bags_num = 0  # 需要打包的数量
@@ -145,9 +145,10 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
         bag_id_to_planned_route = {}
         cur_unallocated_order_item = copy.copy(id_to_unallocated_order_item)
         while i <= bags_num:
-            bags[i] = bag()
-            bags[i].location = cur_unallocated_order_item[0].pickup_factory_id
-            bags[i].end = cur_unallocated_order_item[0].delivery_factory_id  # 暂时赋值
+            bags[i] = bag(0, 0, 0, 0, 0, 0)
+            bags[i].location = id_to_unallocated_order_item[list(id_to_unallocated_order_item)[0]].pickup_factory_id
+
+            # bags[i].end = cur_unallocated_order_item[0].delivery_factory_id  # 暂时赋值
 
             bags[i].demand = 0
             capacity_remain = vehicle.board_capacity
@@ -194,6 +195,7 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
 
             i = +1
             return bags
+
     def two_node_close(node1: Node, node2: Node):
         if route_info.calculate_transport_time_between_factories(node1.id, node2.id) < 300.0:  # hyperparameter, travel time
             return True
@@ -300,9 +302,7 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
                 cannot_split[old_order_id] = now_order_demand
         temp_cnt += 1
 
-
-
-
+    bags = pack_bags(id_to_unallocated_order_item:dict, id_to_vehicle: dict, id_to_factory: dict, route_map, can_split: dict, cannot_split: dict)
 
     vehicle_id_to_destination = {}
     vehicle_id_to_planned_route = {}
