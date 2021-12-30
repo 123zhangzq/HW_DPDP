@@ -24,6 +24,7 @@
 # THE SOFTWARE
 
 import copy
+import time
 
 from src.common.node import Node
 from src.common.route import Map
@@ -33,6 +34,7 @@ from src.utils.json_tools import convert_nodes_to_json
 from src.utils.json_tools import get_vehicle_instance_dict, get_order_item_dict
 from src.utils.json_tools import read_json_from_file, write_json_to_file
 from src.utils.logging_engine import logger
+
 
 
 
@@ -794,6 +796,9 @@ Main body
 def scheduling():
     # read the input json, you can design your own classes
     id_to_factory, id_to_unallocated_order_item, id_to_ongoing_order_item, id_to_vehicle, route_info = __read_input_json()
+
+    # local search
+    ##################
 
     # dispatching algorithm
     vehicle_id_to_destination, vehicle_id_to_planned_route = dispatch_orders_to_vehicles(
