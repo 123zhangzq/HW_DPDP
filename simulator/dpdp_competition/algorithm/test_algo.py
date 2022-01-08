@@ -1,4 +1,4 @@
-# v20211230
+# v20220108
 #添加class数据 bags 见line 35-41
 #添加借鉴silver的split列表 line 264-300
 #添加pack_bags funstion 未测试，见my function
@@ -26,7 +26,7 @@
 import copy
 import time
 import sys
-
+import numpy as np
 from src.common.node import Node
 from src.common.route import Map
 from src.conf.configs import Configs
@@ -40,10 +40,11 @@ from src.utils.logging_engine import logger
 
 
 class bag(object):
-   def __init__(self, bag_id: int, bag_location: str, bag_end: str, bag_delivery_list: list, bag_planned_route: str, bag_demand:float):
+   def __init__(self, bag_id: int, bag_location: str, bag_end: str, bag_pickup_list: list, bag_delivery_list: list, bag_planned_route: str, bag_demand:float):
     self.id = bag_id
     self.location = bag_location
     self.end = bag_end
+    self.pickup_list = bag_pickup_list
     self.delivery_list = bag_delivery_list
     self.planned_route = bag_planned_route
     self.demand = bag_demand
@@ -133,71 +134,304 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
 
 
     # my functions
-    def pack_bags(id_to_unallocated_order_item: dict, id_to_vehicle: dict, id_to_factory: dict,
-                  can_split: dict, cannot_split: dict):
-        bags = {}
+    #pack function  打包函数
+    def pack_bags(id_to_unallocated_order_item: dict, id_to_vehicle: dict, id_to_factory: dict, can_split: dict, cannot_split: dict):
+        bags = []
         bags_num = 0  # 需要打包的数量
         # 计算需要打包的数量，空车数量
         for vehicle_id, vehicle in id_to_vehicle.items():
             if vehicle.carrying_items.is_empty():
-                bags_num = +1
+                bags_num += 1
 
+        # 识别是否已经被本次打包
+        curbags_allocated_order_item = []
         # 开始打包
-        i = 1
+        i = 0
+        j = 0
         bag_id_to_destination = {}
         bag_id_to_planned_route = {}
         cur_unallocated_order_item = copy.copy(id_to_unallocated_order_item)
-        while i <= bags_num:
-            bags[i] = bag(0, 0, 0, 0, 0, 0)
-            bags[i].location = id_to_unallocated_order_item[list(id_to_unallocated_order_item)[0]].pickup_factory_id
+        while i <= bags_num - 1:
+            bag_example = bag(0, '0', '0', [], [], '0', 0)
+            bags.append(bag_example)
+            # 读取第一个非零状态订单/读取最近未分配订单
+            for j in range(0, len(list(cur_unallocated_order_item))):
+                if list(cur_unallocated_order_item)[j] in curbags_allocated_order_item:
+                    continue
+                else:
+                    cur_number = j
+                    break
+            # 识别订单item排序
+            # bags[i]的初始信息初始化为第一个未分配订单相关参数
+            bags[i].location = cur_unallocated_order_item[
+                list(id_to_unallocated_order_item)[cur_number]].pickup_factory_id
 
-            # bags[i].end = cur_unallocated_order_item[0].delivery_factory_id  # 暂时赋值
+            bags[i].end = cur_unallocated_order_item[
+                list(id_to_unallocated_order_item)[cur_number]].delivery_factory_id  # 暂时赋值
 
             bags[i].demand = 0
             capacity_remain = vehicle.board_capacity
-            delivery_item_list = []
-            for item in id_to_unallocated_order_item:
-                cur_demand = 0
+            bag_pickup_item_list = []
+            cur_pickup_route = []
+            bag_delivery_item_list = []
+            cur_delivery_route = []
+            cur_bagdemand = 0
+            cur_demand = 0
+            bag_id_to_planned_route[i] = []
+            bag_id_to_delivery_route = []
+
+            for item_id, item in id_to_unallocated_order_item.items():
+                # 判断是否已经被分配
+                if item in curbags_allocated_order_item:
+                    continue
+                factory_id = item.pickup_factory_id
+
                 if item.pickup_factory_id == bags[i].location and item.delivery_factory_id == bags[i].end:
-                    cur_demand = bags[i].demand
                     if item.order_id in list(cannot_split):  # 借鉴silver的拆分列表
-                        cur_demand = cur_demand + cannot_split[item.order_id]
+                        cur_demand = cur_bagdemand + cannot_split[item.order_id]
                         cur_order_id = item.order_id
+                        # 如果增加order的demand仍小于capacity，就把order对应的所有item添加进来
+                        if cur_demand <= 15:
+                            cur_bagdemand = cur_demand
+                            for k, v in id_to_unallocated_order_item.items():
+                                if v.order_id == cur_order_id:
+                                    bag_pickup_item_list.append(item)
+                                    curbags_allocated_order_item.append(item)
+                                    capacity_remain = capacity_remain - item.demand
+                                    bag_delivery_item_list.append(item)  ###配送list
+                                    pickup_node, delivery_node = __create_pickup_and_delivery_nodes_of_items(
+                                        bag_pickup_item_list, id_to_factory)
+                                    bag_id_to_planned_route[i].append(pickup_node)
+                                    bag_id_to_delivery_route.append(delivery_node)
+                                    # 什么时候，怎么添加delivery点的node?
+                                ## bag_id_to_planned_route[i].append(delivery_node)
+                        else:
+                            cur_demand = cur_bagdemand
+                            continue
 
-                    if cur_demand <= 15:
-                        for item in id_to_unallocated_order_item:
-                            if item.order_id == cur_order_id:
-                                delivery_item_list.append(item)
-                                capacity_remain = capacity_remain - item.demand
-                    else:
-                        cur_demand = bags[i].deamnd
+
+                    elif item.order_id in list(can_split):
+                        capacity_remain = vehicle.board_capacity - cur_bagdemand
+                        while capacity_remain > 0:
+                            for item in id_to_unallocated_order_item.get(item.order_id):
+                                cur_demand = cur_bagdemand + item.demand
+                                if cur_demand < 15:
+                                    bag_pickup_item_list.append(item)
+                                    cur_bagdemand = cur_demand
+                                    bag_delivery_item_list.append(item)
+                                    curbags_allocated_order_item.append(item)
+                                    pickup_node, delivery_node = __create_pickup_and_delivery_nodes_of_items(
+                                        bag_pickup_item_list,
+                                        id_to_factory)
+                                    bag_id_to_planned_route[i].append(pickup_node)
+                                    bag_id_to_delivery_route.append(delivery_node)
+
+                                elif cur_demand == 15:
+                                    bag_pickup_item_list.append(item)
+                                    cur_bagdemand = cur_demand
+                                    bag_delivery_item_list.append(item)
+                                    curbags_allocated_order_item.append(item)
+                                    pickup_node, delivery_node = __create_pickup_and_delivery_nodes_of_items(
+                                        bag_pickup_item_list,
+                                        id_to_factory)
+                                    bag_id_to_planned_route[i].append(pickup_node)
+                                    bag_id_to_delivery_route.append(delivery_node)
+                                    break
+                                else:
+                                    cur_demand = cur_bagdemand
+                                    continue
+
+            # 如果same pick-delivery的item不足，则进行同取不同配的打包
+            if bags[i].demand < 10:
+                # 同上，仅判断条件放宽
+                for item_id, item in id_to_unallocated_order_item.items():
+                    # 判断是否已经被分配
+                    if item in curbags_allocated_order_item:
                         continue
-                elif item.order_id in list(can_split):
-                    capacity_remain = vehicle.board_capacity - cur_demand
-                    while capacity_remain > 0:
-                        for item in id_to_unallocated_order_item.get(item.order_id):
-                            cur_demand = cur_demand + item.demand
-                            if cur_demand < 15:
-                                delivery_item_list.append(item)
-                            elif cur_demand == 15:
-                                delivery_item_list.append(item)
-                                break
+                    factory_id = item.pickup_factory_id
+
+                    if item.pickup_factory_id == bags[i].location:
+                        if item.order_id in list(cannot_split):  # 借鉴silver的拆分列表
+                            cur_demand = cur_bagdemand + cannot_split[item.order_id]
+                            cur_order_id = item.order_id
+                            # 如果增加order的demand仍小于capacity，就把order对应的所有item添加进来
+                            if cur_demand <= 15:
+                                cur_bagdemand = cur_demand
+                                for k, v in id_to_unallocated_order_item.items():
+                                    if v.order_id == cur_order_id:
+                                        bag_pickup_item_list.append(item)
+                                        curbags_allocated_order_item.append(item)
+                                        capacity_remain = capacity_remain - item.demand
+                                        bag_delivery_item_list.append(item)  ###配送list
+                                        pickup_node, delivery_node = __create_pickup_and_delivery_nodes_of_items(
+                                            bag_pickup_item_list,
+                                            id_to_factory)
+                                        bag_id_to_planned_route[i].append(pickup_node)
+                                        bag_id_to_delivery_route.append(delivery_node)
+                                        # 什么时候，怎么添加delivery点的node?
+                                    ## bag_id_to_planned_route[i].append(delivery_node)
                             else:
-                                cur_demand = bags[i].demand
+                                cur_demand = cur_bagdemand
                                 continue
-                # if #可以增加近似点打包策略
-            factory = id_to_factory.get(bags[i].location)
-            delivery_item_list.reverse()  # 转换顺序
-            node = Node(factory_id, factory.lng, factory.lat, [], copy.copy(delivery_item_list))
-            bags[i].planned_route.append(node)
+                        elif item.order_id in list(can_split):
+                            capacity_remain = vehicle.board_capacity - cur_bagdemand
+                            while capacity_remain > 0:
+                                for item in id_to_unallocated_order_item.get(item.order_id):
+                                    cur_demand = cur_bagdemand + item.demand
+                                    if cur_demand < 15:
+                                        bag_pickup_item_list.append(item)
+                                        cur_bagdemand = cur_demand
+                                        bag_delivery_item_list.append(item)
+                                        curbags_allocated_order_item.append(item)
+                                        pickup_node, delivery_node = __create_pickup_and_delivery_nodes_of_items(
+                                            bag_pickup_item_list,
+                                            id_to_factory)
+                                        bag_id_to_planned_route[i].append(pickup_node)
+                                        bag_id_to_delivery_route.append(delivery_node)
 
-            bags[i].location = bags[i].location
-            bags[i].delivery_list = delivery_item_list
+                                    elif cur_demand == 15:
+                                        bag_pickup_item_list.append(item)
+                                        cur_bagdemand = cur_demand
+                                        bag_delivery_item_list.append(item)
+                                        curbags_allocated_order_item.append(item)
+                                        pickup_node, delivery_node = __create_pickup_and_delivery_nodes_of_items(
+                                            bag_pickup_item_list,
+                                            id_to_factory)
+                                        bag_id_to_planned_route[i].append(pickup_node)
+                                        bag_id_to_delivery_route.append(delivery_node)
+                                        break
+                                    else:
+                                        cur_demand = cur_bagdemand
+                                        continue
+                if bags[i].demand > 14:
+                    break
+                # 除以上严格策略外，可继续补充其他策略下的打包方法
+                # if #可以增加不同pickup，相同delivery的order#########20220106
+                if bags[i].demand < 5:
+                    for item_id, item in id_to_unallocated_order_item.items():
+                        # 判断是否已经被分配
+                        if item in curbags_allocated_order_item:
+                            continue
+                        factory_id = item.pickup_factory_id
 
-            bags[i].demand = cur_demand
+                        if item.delivery_factory_id == bags[i].end:
+                            if item.order_id in list(cannot_split):  # 借鉴silver的拆分列表
+                                cur_demand = cur_bagdemand + cannot_split[item.order_id]
+                                cur_order_id = item.order_id
+                                # 如果增加order的demand仍小于capacity，就把order对应的所有item添加进来
+                                if cur_demand <= 15:
+                                    cur_bagdemand = cur_demand
+                                    for k, v in id_to_unallocated_order_item.items():
+                                        if v.order_id == cur_order_id:
+                                            bag_pickup_item_list.append(item)
+                                            curbags_allocated_order_item.append(item)
+                                            capacity_remain = capacity_remain - item.demand
+                                            bag_delivery_item_list.append(item)  ###配送list
+                                            pickup_node, delivery_node = __create_pickup_and_delivery_nodes_of_items(
+                                                bag_pickup_item_list, id_to_factory)
+                                            bag_id_to_planned_route[i].append(pickup_node)
+                                            bag_id_to_delivery_route.append(delivery_node)
+                                            # 什么时候，怎么添加delivery点的node?
+                                        ## bag_id_to_planned_route[i].append(delivery_node)
+                                else:
+                                    cur_demand = cur_bagdemand
+                                    continue
+                            elif item.order_id in list(can_split):
+                                capacity_remain = vehicle.board_capacity - cur_bagdemand
+                                while capacity_remain > 0:
+                                    for item in id_to_unallocated_order_item.get(item.order_id):
+                                        cur_demand = cur_bagdemand + item.demand
+                                        if cur_demand < 15:
+                                            bag_pickup_item_list.append(item)
+                                            cur_bagdemand = cur_demand
+                                            bag_delivery_item_list.append(item)
+                                            curbags_allocated_order_item.append(item)
+                                            pickup_node, delivery_node = __create_pickup_and_delivery_nodes_of_items(
+                                                bag_pickup_item_list,
+                                                id_to_factory)
+                                            bag_id_to_planned_route[i].append(pickup_node)
+                                            bag_id_to_delivery_route.append(delivery_node)
 
-            i = +1
-            return bags
+                                        elif cur_demand == 15:
+                                            bag_pickup_item_list.append(item)
+                                            cur_bagdemand = cur_demand
+                                            bag_delivery_item_list.append(item)
+                                            curbags_allocated_order_item.append(item)
+                                            pickup_node, delivery_node = __create_pickup_and_delivery_nodes_of_items(
+                                                bag_pickup_item_list,
+                                                id_to_factory)
+                                            bag_id_to_planned_route[i].append(pickup_node)
+                                            bag_id_to_delivery_route.append(delivery_node)
+                                            break
+                                        else:
+                                            cur_demand = cur_bagdemand
+                                            continue
+                    if bags[i].demand > 12:
+                        break
+                # 如果定点order打包不顺利，则顺序打包，暂时按照same打包，测试是否能够成功
+
+            bag_id_to_planned_route[i].reverse()
+
+            bag_id_to_planned_route[i].extend(bag_id_to_delivery_route)
+
+            # 由item_list生成基于order的node列表
+            # cur_bag_delivery_item_list = copy.copy(bag_delivery_item_list.reverse())
+            # cur_deleted_item_list = []
+            # cur_item_list = []
+            # while len(cur_deleted_item_list) != len(cur_bag_delivery_item_list):
+            #     for i in range (0,len(cur_bag_delivery_item_list)):
+            #         item = cur_bag_delivery_item_list[i]
+            #         if item in cur_deleted_item_list:
+            #             continue
+            #         if len(cur_item_order_id) == 0:
+            #             cur_item_order_id = item.order_id
+            #
+            #         if item.order_id ==  cur_item_order_id:
+            #             cur_item_list.append(item)
+            #             cur_deleted_item_list.append(item)
+            #
+            #     delivery_node =__create_pickup_and_delivery_nodes_of_items(cur_item_list, id_to_factory)
+            #     bag_id_to_planned_route[i].append(delivery_node)
+            #     cur_item_order_id = []
+
+            bags[i].demand = cur_bagdemand
+            cur_bagdemand = 0
+
+            # bags[i].location = bag.location
+            bags[i].delivery_list = bag_delivery_item_list
+            bags[i].planned_route = bag_id_to_planned_route
+            i = i + 1
+        return bags
+    #bags分配到vehicle 分配函数
+    def assign_bags_to_vehicles(bags: list, id_to_vehicle: dict, vehicle_id_to_destination: dict,
+                                vehicle_id_to_planned_route: dict, route_map):
+        empty_vehicles = []
+        for vehicle in id_to_vehicle:
+            if vehicle.carrying_items.is_empty():
+                empty_vehicles.append(vehicle)
+        # 行号为vehicle 列号为bag
+        distance_matrix = []
+        empty_vehicles_list = list(empty_vehicles)
+        for i in range(0, len(empty_vehicles)):
+            factory1 = empty_vehicles[i].destination
+            for j in range(0, len(bags)):
+                factory2 = bags[j].location
+                distance = route_map.calculate_transport_time_between_factories(factory1, factory2)
+                distance_matrix[i][j] = distance
+        # import numpy as np  #
+        from scipy.optimize import linear_sum_assignment
+        cost = np.array(distance_matrix)
+        row_ind, col_ind = linear_sum_assignment(cost)
+        print(row_ind)
+        print(col_ind)
+        z = list(zip(row_ind, col_ind))
+        for zz in z:
+            assign_vehicle_id = empty_vehicles_list[zz[0]].id
+            assign_bag_num = zz[1]
+            vehicle_id_to_planned_route[assign_vehicle_id] = bags[assign_bag_num].planned_route
+            vehicle_id_to_destination[assign_vehicle_id] = bags[assign_bag_num].location
+
+        return vehicle_id_to_planned_route, vehicle_id_to_destination
 
     def two_node_close(node1: Node, node2: Node):
         if route_info.calculate_transport_time_between_factories(node1.id, node2.id) < 300.0:  # hyperparameter, travel time
