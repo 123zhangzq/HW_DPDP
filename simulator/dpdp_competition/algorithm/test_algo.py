@@ -883,54 +883,173 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
 
 
     # # local search
-    # # functions
-    # def get_route_length(planned_route: list):
-    #     l = 0
-    #
-    #     for i in range(len(planned_route) - 1):
-    #         l += route_info.calculate_transport_time_between_factories(planned_route[i].id, planned_route[i+1].id)
-    #     return l
-    #
-    # def is_capacity_feasible(planned_route: list, carrying_items, capacity):
-    #     copy_carrying_items = copy.deepcopy(carrying_items)
-    #     left_capacity = capacity
-    #     # Stack
-    #     while not copy_carrying_items.is_empty():
-    #         item = copy_carrying_items.pop()
-    #         left_capacity -= item.demand
-    #         if left_capacity < 0:
-    #             #logger.error(f"left capacity {left_capacity} < 0")
-    #             return False
-    #     for node in planned_route:
-    #         delivery_items = node.delivery_items
-    #         pickup_items = node.pickup_items
-    #         for item in delivery_items:
-    #             left_capacity += item.demand
-    #             if left_capacity > capacity:
-    #                 #logger.error(f"left capacity {left_capacity} > capacity {capacity}")
-    #                 return False
-    #         for item in pickup_items:
-    #             left_capacity -= item.demand
-    #             if left_capacity < 0:
-    #                 #logger.error(f"left capacity {left_capacity} < 0")
-    #                 return False
-    #     return True
-    #
-    # def FILO_possible_location(planned_route: list, index_move):
-    #     for i in range(len(planned_route)):
-    #         if
-    #
-    #
-    #
-    # def local_search(planned_route: list):
-    #
-    #     return
-    #
-    #
-    # # start local search
-    # for v_id, v_pr in vehicle_id_to_planned_route.items():
-    #     for i in range(len(v_pr)):
-    #         local_search(v_pr)
+    #################### local search for nodes #######################
+    # import time
+
+    # common functions
+    # calculate total distance for planned routes:
+    #   输入：一条planning_routes
+    #   输出：此planning_routes的总距离
+    def get_total_distance(planned_routes):
+        total_dis = 0
+        for i in range(len(planned_routes) - 1):
+            total_dis += route_info.calculate_distance_between_factories(planned_routes[i].id, planned_routes[i+1].id)
+
+        return total_dis
+
+    # bag functions
+    # check bags
+    # 输入：一个bag （即planned_route)
+    # 输出：无输出，直接报错
+    # 只检查了规划路径长度是否为偶数，还可以加上其他检查，比如是否严格的一个order对应两个nodes
+    # 以及是否是feasible LIFO 路径结果
+    def bag_checkbags(planned_route):
+        # 是否node为偶数，即一个delivery的node对应一个pickup的node
+        if len(planned_route) % 2 != 0:
+            exc = Exception("Planned route is not correct!")
+            raise exc
+
+    # 1-opt operator for delivery nodes in a bag:
+    #   输入：planning_routes，bag形式，前n/2个node是pickup，后一半是FILO对应的送货点
+    #        ind1和ind2是两个index，将第ind1个node移出并插入到ind2后面
+    #   输出：None，但输入的planning_routes变成新的planning_routes
+    def bag_1_opt(lis: list, ind1: int, ind2: int):
+        """
+
+        1-opt operator: for delivery nodes, insert ind1 node after ind2 node
+
+        """
+        # check ind1, ind2 feasibility
+        if ind1 < int(len(lis) / 2) or ind1 > len(lis) - 1:
+            exc = Exception("Trying to operate wrong node! --ind1")
+            raise exc
+        if ind2 < int(len(lis) / 2) - 1 or ind2 > len(lis) - 1:
+            exc = Exception("Trying to insert to wrong place! --ind2")
+            raise exc
+        if ind1 == ind2 or ind1 - ind2 == 1:
+            return
+
+        # delivery nodes
+        temp = lis[ind1]
+        del lis[ind1]
+        if ind1 < ind2:
+            lis.insert(ind2, temp)
+        else:
+            lis.insert(ind2 + 1, temp)
+
+        # corresponding pickup nodes
+        p_ind1 = int(len(lis) / 2 - 1 - (ind1 - len(lis) / 2))
+        p_ind2 = int(len(lis) / 2 - 1 - (ind2 - len(lis) / 2))
+        temp = lis[p_ind1]
+        del lis[p_ind1]
+        if p_ind1 > p_ind2:
+            lis.insert(p_ind2, temp)
+        else:
+            lis.insert(p_ind2 - 1, temp)
+
+        return
+
+    # calculate delta distance for 1-opt operator
+    #   输入：planning_routes，bag形式，前n/2个node是pickup，后一半是FILO对应的送货点
+    #        ind1和ind2是两个index，将第ind1个node移出并插入到ind2后面
+    #   输出：将ind1的node插入ind2后，delta距离
+    def bag_delta_distance_1opt(lis, ind1, ind2):
+
+        rd = route_info.calculate_distance_between_factories
+
+        if ind1 == int(len(lis)/2):
+            if ind2 != len(lis) - 1:
+                return - rd(lis[0].id, lis[ind1].id) - rd(lis[ind1].id, lis[ind1+1].id)\
+                       - rd(lis[ind2].id, lis[ind2+1].id) + rd(lis[0].id, lis[ind1+1].id)\
+                       + rd(lis[ind2].id, lis[ind1].id) + rd(lis[ind1].id, lis[ind2+1].id)
+            else:
+                return - rd(lis[0].id, lis[ind1].id) - rd(lis[ind1].id, lis[ind1+1].id)\
+                       + rd(lis[0].id, lis[ind1+1].id) + rd(lis[ind1].id, lis[ind2].id)
+        elif ind1 != len(lis) - 1:
+            if ind2 != len(lis) - 1:
+                return - rd(lis[ind1-1].id, lis[ind1].id) - rd(lis[ind1].id, lis[ind1+1].id)\
+                       - rd(lis[ind2].id, lis[ind2+1].id) + rd(lis[ind1-1].id, lis[ind1+1].id)\
+                       + rd(lis[ind2].id, lis[ind1].id) + rd(lis[ind1].id, lis[ind2+1].id)
+            else:
+                return - rd(lis[ind1-1].id, lis[ind1].id) - rd(lis[ind1].id, lis[ind1+1].id)\
+                       + rd(lis[ind1-1].id, lis[ind1+1].id) + rd(lis[ind2].id, lis[ind1].id)
+        else:
+            return - rd(lis[ind1-1].id, lis[ind1].id) - rd(lis[ind2].id, lis[ind2+1].id)\
+                   + rd(lis[ind2].id, lis[ind1].id) + rd(lis[ind1].id, lis[ind2+1].id)
+
+    # local serach functions
+    # Only downhill local search, to converge to local minimum. Only consider
+    # the minimum total distance for these deliver nodes.
+    # Input : the planned route, namely a <list> of nodes.
+    #         flag_loop, 默认值True，表示循环整个planned_route，如果是False，第一个更优解直接返回
+    # Output: new planned route
+    def bag_downhill_local_serach(planned_route, flag_loop = True):
+        sol = planned_route
+        for i in range(int(len(planned_route) / 2), len(planned_route)):
+            for j in range(int(len(planned_route) / 2) - 1, len(planned_route)):
+                if i == j or i - j == 1:
+                    continue
+                else:
+                    delta_dis = bag_delta_distance_1opt(sol, i, j)
+                    if delta_dis < 0.0 and abs(delta_dis) > 1e-5:
+                        bag_1_opt(sol, i, j)
+                        if not flag_loop:
+                            return sol
+        return sol
+
+    # Record-2-Record, metaheuristic algo
+    # Input : the planned route, namely a <list> of nodes.
+    # Output: new planned route
+    def bag_r2r_local_search(planned_route):
+        sol = planned_route
+        BKS = copy.deepcopy(sol)
+        BKS_value = get_total_distance(BKS)
+        record_para = 0.05  # can be adjusted
+        record = BKS_value * record_para
+
+        for i in range(int(len(planned_route) / 2), len(planned_route)):
+            for j in range(int(len(planned_route) / 2) - 1, len(planned_route)):
+                if i == j or i - j == 1:
+                    continue
+                else:
+                    delta_dis = bag_delta_distance_1opt(sol, i, j)
+                    if delta_dis < 0.0 and abs(delta_dis) > 1e-5:
+                        bag_1_opt(sol, i, j)
+                        BKS = sol
+                        BKS_value = get_total_distance(BKS)
+                        record = BKS_value * record_para
+                    elif delta_dis < record:
+                        bag_1_opt(sol, i, j)
+        return BKS
+
+    # local search algo with timing
+    # Input : a <list> of bags
+    # Output: None, operate on the input list
+    def local_search(bags):
+        for i in range(len(bags)):
+
+            time_start = time.time()
+
+            temp_sol = bags[i].planned_route
+            BKS_value = get_total_distance(temp_sol)
+
+            while 1:
+
+                running_time = time.time() - time_start
+                if running_time > 60 * 9 / len(bags):  # s
+                    break
+
+                temp_sol = bag_r2r_local_search(temp_sol)
+                temp_sol = bag_downhill_local_serach(temp_sol)
+                cur_value = get_total_distance(temp_sol)
+                delta = BKS_value - cur_value
+                if delta > 0:
+                    BKS_value = cur_value
+                elif delta == 0:
+                    bags[i].planned_route = temp_sol
+                    break
+            return
+    ########################## finish local search ############################
 
     # create the output of the algorithm
     for vehicle_id, vehicle in id_to_vehicle.items():
