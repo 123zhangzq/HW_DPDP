@@ -558,7 +558,7 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
                 cannot_split[old_order_id] = now_order_demand
         temp_cnt += 1
 
-    bags = pack_bags(id_to_unallocated_order_item, id_to_vehicle, id_to_factory, route_map, can_split, cannot_split)
+    bags = pack_bags(id_to_unallocated_order_item, id_to_vehicle, id_to_factory, can_split, cannot_split)
 
     vehicle_id_to_destination = {}
     vehicle_id_to_planned_route = {}
