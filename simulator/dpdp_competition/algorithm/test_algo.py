@@ -300,7 +300,7 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
 
             time_start = time.time()
 
-            temp_sol = bags[i]
+            temp_sol = bags[i].planned_route
             BKS_value = get_total_distance(temp_sol)
 
             while 1:
@@ -316,7 +316,7 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
                 if delta > 0:
                     BKS_value = cur_value
                 elif delta == 0:
-                    bags[i] = temp_sol
+                    bags[i].planned_route = temp_sol
                     break
             return
 
