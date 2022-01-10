@@ -1,7 +1,5 @@
-# v20220108
-#添加class数据 bags 见line 35-41
-#添加借鉴silver的split列表 line 264-300
-#添加pack_bags funstion 未测试，见my function
+# v20220110
+
 
 # Copyright (C) 2021. Huawei Technologies Co., Ltd. All rights reserved.
 #
@@ -36,7 +34,7 @@ from src.utils.json_tools import get_vehicle_instance_dict, get_order_item_dict
 from src.utils.json_tools import read_json_from_file, write_json_to_file
 from src.utils.logging_engine import logger
 
-
+from scipy.optimize import linear_sum_assignment
 
 
 class bag(object):
@@ -425,12 +423,12 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
     def assign_bags_to_vehicles(bags: list, id_to_vehicle: dict, vehicle_id_to_destination: dict,
                                 vehicle_id_to_planned_route: dict, route_map):
         empty_vehicles = []
-        for vehicle in id_to_vehicle:
+        for vehicle_id, vehicle in id_to_vehicle:
             if vehicle.carrying_items.is_empty():
                 empty_vehicles.append(vehicle)
         # 行号为vehicle 列号为bag
         distance_matrix = []
-        empty_vehicles_list = list(empty_vehicles)
+        # empty_vehicles_list = list(empty_vehicles)
         for i in range(0, len(empty_vehicles)):
             factory1 = empty_vehicles[i].destination
             for j in range(0, len(bags)):
@@ -438,18 +436,17 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
                 distance = route_map.calculate_transport_time_between_factories(factory1, factory2)
                 distance_matrix[i][j] = distance
         # import numpy as np  #
-        from scipy.optimize import linear_sum_assignment
+
         cost = np.array(distance_matrix)
-        row_ind, col_ind = linear_sum_assignment(cost)
-        print(row_ind)
-        print(col_ind)
+        row_ind, col_ind = linear_sum_assignment(cost)  # 获取最优解的行列号
+        # print(row_ind)
+        # print(col_ind)
         z = list(zip(row_ind, col_ind))
-        for zz in z:
-            assign_vehicle_id = empty_vehicles_list[zz[0]].id
-            assign_bag_num = zz[1]
+        for z_num in z:
+            assign_vehicle_id = empty_vehicles[z_num[0]]
+            assign_bag_num = z_num[1]
             vehicle_id_to_planned_route[assign_vehicle_id] = bags[assign_bag_num].planned_route
             vehicle_id_to_destination[assign_vehicle_id] = bags[assign_bag_num].location
-
         return vehicle_id_to_planned_route, vehicle_id_to_destination
 
     def two_node_close(node1: Node, node2: Node):
@@ -516,8 +513,11 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
 
 
 
-    # algorithm start
+    # algorithm start开始优化函数
     # Order (items) can be Split or Not?
+    vehicle_id_to_destination = {}
+    vehicle_id_to_planned_route = {}
+
 
     can_split = {}
     cannot_split = {}
@@ -557,11 +557,23 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
             else:
                 cannot_split[old_order_id] = now_order_demand
         temp_cnt += 1
+    bags = []
 
-    bags = pack_bags(id_to_unallocated_order_item, id_to_vehicle, id_to_factory, can_split, cannot_split)
+    #当且仅当item非空，且空车非空，才进行打包操作
+    if len(id_to_unallocated_order_item) > 0 :
+        bags_num = 0
+        for vehicle_id, vehicle in id_to_vehicle.items():
+            if vehicle.carrying_items.is_empty():
+                bags_num += 1
+        if bags_num > 0:
+            bags = pack_bags(id_to_unallocated_order_item, id_to_vehicle, id_to_factory, can_split, cannot_split)
+            # 可以使用local search 进行bags的优化
 
-    vehicle_id_to_destination = {}
-    vehicle_id_to_planned_route = {}
+
+            vehicle_id_to_planned_route, vehicle_id_to_destination = assign_bags_to_vehicles (bags, id_to_vehicle, vehicle_id_to_destination, vehicle_id_to_planned_route, route_map)
+
+
+
 
     current_time = int(__get_current_time(id_to_vehicle))
 
