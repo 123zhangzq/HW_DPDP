@@ -421,7 +421,7 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
 
     #bags分配到vehicle 分配函数
     def assign_bags_to_vehicles(bags: list, id_to_vehicle: dict, vehicle_id_to_destination: dict,
-                                vehicle_id_to_planned_route: dict, route_map):
+                                vehicle_id_to_planned_route: dict, route_info):
         empty_vehicles = []
         for vehicle_id, vehicle in id_to_vehicle:
             if vehicle.carrying_items.is_empty():
@@ -433,7 +433,7 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
             factory1 = empty_vehicles[i].destination
             for j in range(0, len(bags)):
                 factory2 = bags[j].location
-                distance = route_map.calculate_transport_time_between_factories(factory1, factory2)
+                distance = route_info.calculate_transport_time_between_factories(factory1, factory2)
                 distance_matrix[i][j] = distance
         # import numpy as np  #
 
