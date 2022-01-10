@@ -37,6 +37,9 @@ from src.utils.logging_engine import logger
 from src.utils.tools import get_item_dict_from_order_dict, get_order_items_to_be_dispatched_of_cur_time
 from src.utils.tools import get_item_list_of_vehicles
 
+from src.utils.json_tools import read_json_from_file, write_json_to_file
+from src.utils.json_tools import convert_nodes_to_json
+
 
 class SimulateEnvironment(object):
     def __init__(self, initial_time: int, time_interval: int, id_to_order: dict, id_to_vehicle: dict,
@@ -219,6 +222,17 @@ class SimulateEnvironment(object):
                 logger.error(f"Vehicle {vehicle_id} does not have the information of carrying items")
 
             vehicle.planned_route = vehicle_id_to_rest_planned_routes.get(vehicle_id)
+
+
+        def __output_remain_routes(vehicle_id_to_remain_route):
+            write_json_to_file(Configs.algorithm_remain_route_path,
+                               convert_nodes_to_json(vehicle_id_to_remain_route))
+
+        vid_to_remain_route = {}
+        for vehicle_id, vehicle in self.id_to_vehicle.items():
+            vid_to_remain_route[vehicle_id] = vehicle.planned_route
+        __output_remain_routes(vid_to_remain_route)
+
 
     # 派单环节
     def dispatch(self, input_info):
