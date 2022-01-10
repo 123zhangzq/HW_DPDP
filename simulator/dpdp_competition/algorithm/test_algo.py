@@ -44,111 +44,111 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
     vehicle_id_to_destination = {}
     vehicle_id_to_planned_route = {}
 
-    # # dealing with the carrying items of vehicles (处理车辆身上已经装载的货物)
-    # for vehicle_id, vehicle in id_to_vehicle.items():
-    #     unloading_sequence_of_items = vehicle.get_unloading_sequence()
-    #     vehicle_id_to_planned_route[vehicle_id] = []
-    #     if len(unloading_sequence_of_items) > 0:
-    #         delivery_item_list = []
-    #         factory_id = unloading_sequence_of_items[0].delivery_factory_id
-    #         for item in unloading_sequence_of_items:
-    #             if item.delivery_factory_id == factory_id:
-    #                 delivery_item_list.append(item)
-    #             else:
-    #                 factory = id_to_factory.get(factory_id)
-    #                 node = Node(factory_id, factory.lng, factory.lat, [], copy.copy(delivery_item_list))
-    #                 vehicle_id_to_planned_route[vehicle_id].append(node)
-    #                 delivery_item_list = [item]
-    #                 factory_id = item.delivery_factory_id
-    #         if len(delivery_item_list) > 0:
-    #             factory = id_to_factory.get(factory_id)
-    #             node = Node(factory_id, factory.lng, factory.lat, [], copy.copy(delivery_item_list))
-    #             vehicle_id_to_planned_route[vehicle_id].append(node)
-    #
-    # # for the empty vehicle, it has been allocated to the order, but have not yet arrived at the pickup factory
-    # pre_matching_item_ids = []
-    # for vehicle_id, vehicle in id_to_vehicle.items():
-    #     if vehicle.carrying_items.is_empty() and vehicle.destination is not None:
-    #         pickup_items = vehicle.destination.pickup_items
-    #         pickup_node, delivery_node = __create_pickup_and_delivery_nodes_of_items(pickup_items, id_to_factory)
-    #         vehicle_id_to_planned_route[vehicle_id].append(pickup_node)
-    #         vehicle_id_to_planned_route[vehicle_id].append(delivery_node)
-    #         pre_matching_item_ids.extend([item.id for item in pickup_items])
-    #
-    # # dispatch unallocated orders to vehicles
-    # capacity = __get_capacity_of_vehicle(id_to_vehicle)
-    #
-    # order_id_to_items = {}
-    # for item_id, item in id_to_unallocated_order_item.items():
-    #     if item_id in pre_matching_item_ids:
-    #         continue
-    #     order_id = item.order_id
-    #     if order_id not in order_id_to_items:
-    #         order_id_to_items[order_id] = []
-    #     order_id_to_items[order_id].append(item)
-    #
-    # vehicle_index = 0
-    # vehicles = [vehicle for vehicle in id_to_vehicle.values()]
-    # for order_id, items in order_id_to_items.items():
-    #     demand = __calculate_demand(items)
-    #     if demand > capacity:
-    #         cur_demand = 0
-    #         tmp_items = []
-    #         for item in items:
-    #             if cur_demand + item.demand > capacity:
-    #                 pickup_node, delivery_node = __create_pickup_and_delivery_nodes_of_items(tmp_items, id_to_factory)
-    #                 if pickup_node is None or delivery_node is None:
-    #                     continue
-    #                 vehicle = vehicles[vehicle_index]
-    #                 vehicle_id_to_planned_route[vehicle.id].append(pickup_node)
-    #                 vehicle_id_to_planned_route[vehicle.id].append(delivery_node)
-    #
-    #                 vehicle_index = (vehicle_index + 1) % len(vehicles)
-    #                 tmp_items = []
-    #                 cur_demand = 0
-    #
-    #             tmp_items.append(item)
-    #             cur_demand += item.demand
-    #
-    #         if len(tmp_items) > 0:
-    #             pickup_node, delivery_node = __create_pickup_and_delivery_nodes_of_items(tmp_items, id_to_factory)
-    #             if pickup_node is None or delivery_node is None:
-    #                 continue
-    #             vehicle = vehicles[vehicle_index]
-    #             vehicle_id_to_planned_route[vehicle.id].append(pickup_node)
-    #             vehicle_id_to_planned_route[vehicle.id].append(delivery_node)
-    #     else:
-    #         pickup_node, delivery_node = __create_pickup_and_delivery_nodes_of_items(items, id_to_factory)
-    #         if pickup_node is None or delivery_node is None:
-    #             continue
-    #         vehicle = vehicles[vehicle_index]
-    #         vehicle_id_to_planned_route[vehicle.id].append(pickup_node)
-    #         vehicle_id_to_planned_route[vehicle.id].append(delivery_node)
-    #
-    #     vehicle_index = (vehicle_index + 1) % len(vehicles)
-    #
-    # # create the output of the algorithm
-    # for vehicle_id, vehicle in id_to_vehicle.items():
-    #     origin_planned_route = vehicle_id_to_planned_route.get(vehicle_id)
-    #     # Combine adjacent-duplicated nodes.
-    #     __combine_duplicated_nodes(origin_planned_route)
-    #
-    #     destination = None
-    #     planned_route = []
-    #     # determine the destination
-    #     if vehicle.destination is not None:
-    #         if len(origin_planned_route) == 0:
-    #             logger.error(f"Planned route of vehicle {vehicle_id} is wrong")
-    #         else:
-    #             destination = origin_planned_route[0]
-    #             destination.arrive_time = vehicle.destination.arrive_time
-    #             planned_route = [origin_planned_route[i] for i in range(1, len(origin_planned_route))]
-    #     elif len(origin_planned_route) > 0:
-    #         destination = origin_planned_route[0]
-    #         planned_route = [origin_planned_route[i] for i in range(1, len(origin_planned_route))]
-    #
-    #     vehicle_id_to_destination[vehicle_id] = destination
-    #     vehicle_id_to_planned_route[vehicle_id] = planned_route
+    # dealing with the carrying items of vehicles (处理车辆身上已经装载的货物)
+    for vehicle_id, vehicle in id_to_vehicle.items():
+        unloading_sequence_of_items = vehicle.get_unloading_sequence()
+        vehicle_id_to_planned_route[vehicle_id] = []
+        if len(unloading_sequence_of_items) > 0:
+            delivery_item_list = []
+            factory_id = unloading_sequence_of_items[0].delivery_factory_id
+            for item in unloading_sequence_of_items:
+                if item.delivery_factory_id == factory_id:
+                    delivery_item_list.append(item)
+                else:
+                    factory = id_to_factory.get(factory_id)
+                    node = Node(factory_id, factory.lng, factory.lat, [], copy.copy(delivery_item_list))
+                    vehicle_id_to_planned_route[vehicle_id].append(node)
+                    delivery_item_list = [item]
+                    factory_id = item.delivery_factory_id
+            if len(delivery_item_list) > 0:
+                factory = id_to_factory.get(factory_id)
+                node = Node(factory_id, factory.lng, factory.lat, [], copy.copy(delivery_item_list))
+                vehicle_id_to_planned_route[vehicle_id].append(node)
+
+    # for the empty vehicle, it has been allocated to the order, but have not yet arrived at the pickup factory
+    pre_matching_item_ids = []
+    for vehicle_id, vehicle in id_to_vehicle.items():
+        if vehicle.carrying_items.is_empty() and vehicle.destination is not None:
+            pickup_items = vehicle.destination.pickup_items
+            pickup_node, delivery_node = __create_pickup_and_delivery_nodes_of_items(pickup_items, id_to_factory)
+            vehicle_id_to_planned_route[vehicle_id].append(pickup_node)
+            vehicle_id_to_planned_route[vehicle_id].append(delivery_node)
+            pre_matching_item_ids.extend([item.id for item in pickup_items])
+
+    # dispatch unallocated orders to vehicles
+    capacity = __get_capacity_of_vehicle(id_to_vehicle)
+
+    order_id_to_items = {}
+    for item_id, item in id_to_unallocated_order_item.items():
+        if item_id in pre_matching_item_ids:
+            continue
+        order_id = item.order_id
+        if order_id not in order_id_to_items:
+            order_id_to_items[order_id] = []
+        order_id_to_items[order_id].append(item)
+
+    vehicle_index = 0
+    vehicles = [vehicle for vehicle in id_to_vehicle.values()]
+    for order_id, items in order_id_to_items.items():
+        demand = __calculate_demand(items)
+        if demand > capacity:
+            cur_demand = 0
+            tmp_items = []
+            for item in items:
+                if cur_demand + item.demand > capacity:
+                    pickup_node, delivery_node = __create_pickup_and_delivery_nodes_of_items(tmp_items, id_to_factory)
+                    if pickup_node is None or delivery_node is None:
+                        continue
+                    vehicle = vehicles[vehicle_index]
+                    vehicle_id_to_planned_route[vehicle.id].append(pickup_node)
+                    vehicle_id_to_planned_route[vehicle.id].append(delivery_node)
+
+                    vehicle_index = (vehicle_index + 1) % len(vehicles)
+                    tmp_items = []
+                    cur_demand = 0
+
+                tmp_items.append(item)
+                cur_demand += item.demand
+
+            if len(tmp_items) > 0:
+                pickup_node, delivery_node = __create_pickup_and_delivery_nodes_of_items(tmp_items, id_to_factory)
+                if pickup_node is None or delivery_node is None:
+                    continue
+                vehicle = vehicles[vehicle_index]
+                vehicle_id_to_planned_route[vehicle.id].append(pickup_node)
+                vehicle_id_to_planned_route[vehicle.id].append(delivery_node)
+        else:
+            pickup_node, delivery_node = __create_pickup_and_delivery_nodes_of_items(items, id_to_factory)
+            if pickup_node is None or delivery_node is None:
+                continue
+            vehicle = vehicles[vehicle_index]
+            vehicle_id_to_planned_route[vehicle.id].append(pickup_node)
+            vehicle_id_to_planned_route[vehicle.id].append(delivery_node)
+
+        vehicle_index = (vehicle_index + 1) % len(vehicles)
+
+    # create the output of the algorithm
+    for vehicle_id, vehicle in id_to_vehicle.items():
+        origin_planned_route = vehicle_id_to_planned_route.get(vehicle_id)
+        # Combine adjacent-duplicated nodes.
+        __combine_duplicated_nodes(origin_planned_route)
+
+        destination = None
+        planned_route = []
+        # determine the destination
+        if vehicle.destination is not None:
+            if len(origin_planned_route) == 0:
+                logger.error(f"Planned route of vehicle {vehicle_id} is wrong")
+            else:
+                destination = origin_planned_route[0]
+                destination.arrive_time = vehicle.destination.arrive_time
+                planned_route = [origin_planned_route[i] for i in range(1, len(origin_planned_route))]
+        elif len(origin_planned_route) > 0:
+            destination = origin_planned_route[0]
+            planned_route = [origin_planned_route[i] for i in range(1, len(origin_planned_route))]
+
+        vehicle_id_to_destination[vehicle_id] = destination
+        vehicle_id_to_planned_route[vehicle_id] = planned_route
 
 
     #################### local search for nodes #######################
