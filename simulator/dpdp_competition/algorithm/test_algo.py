@@ -136,6 +136,7 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
     def pack_bags(id_to_unallocated_order_item: dict, id_to_vehicle: dict, id_to_factory: dict, can_split: dict,
                   cannot_split: dict):
         bags = []
+
         bags_num = 0  # 需要打包的数量
         # 计算需要打包的数量，空车数量
 
@@ -201,7 +202,7 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
                                     cur_bagdemand = cur_bagdemand + item.demand
                             for item in cur_item_list:
                                 item_id = item.id
-                                del cur_unallocated_order_item[item_id]
+                                #del cur_unallocated_order_item[item_id]
                             pickup_node, delivery_node = __create_pickup_and_delivery_nodes_of_items(cur_item_list,
                                                                                                      id_to_factory)
                             bag_id_to_planned_route.append(pickup_node)
@@ -225,7 +226,7 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
                                     cur_bagdemand = cur_bagdemand + item.demand
                             for item in cur_item_list:
                                 item_id = item.id
-                                del cur_unallocated_order_item[item_id]
+                                #del cur_unallocated_order_item[item_id]
                             pickup_node, delivery_node = __create_pickup_and_delivery_nodes_of_items(cur_item_list,
                                                                                                      id_to_factory)
                             bag_id_to_planned_route.append(pickup_node)
@@ -251,7 +252,7 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
                                         continue
                                 for item in cur_item_list:
                                     item_id = item.id
-                                    del cur_unallocated_order_item[item_id]
+                                    #del cur_unallocated_order_item[item_id]
                                 pickup_node, delivery_node = __create_pickup_and_delivery_nodes_of_items(cur_item_list,
                                                                                                          id_to_factory)
                                 bag_id_to_planned_route.append(pickup_node)
@@ -285,7 +286,7 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
                                         cur_bagdemand = cur_bagdemand + item.demand
                                 for item in cur_item_list:
                                     item_id = item.id
-                                    del cur_unallocated_order_item[item_id]
+                                    #del cur_unallocated_order_item[item_id]
 
                                 pickup_node, delivery_node = __create_pickup_and_delivery_nodes_of_items(cur_item_list,
                                                                                                          id_to_factory)
@@ -443,7 +444,8 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
             bag_demand = cur_bagdemand
             cur_bagdemand = 0
 
-            bags[i] = bag(i, bag_location, bag_end, bag_id_to_planned_route, bag_demand)
+            bags.append(bag(i, bag_location, bag_end, bag_id_to_planned_route, bag_demand))
+
 
             i = i + 1
         return bags
@@ -599,7 +601,7 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
             # 可以使用local search 进行bags的优化
 
 
-            vehicle_id_to_planned_route, vehicle_id_to_destination = assign_bags_to_vehicles (bags, id_to_vehicle, vehicle_id_to_destination, vehicle_id_to_planned_route, route_map)
+            vehicle_id_to_planned_route, vehicle_id_to_destination = assign_bags_to_vehicles (bags, id_to_vehicle, vehicle_id_to_destination, vehicle_id_to_planned_route, route_info)
 
 
 
