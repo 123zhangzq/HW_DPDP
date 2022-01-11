@@ -38,12 +38,11 @@ from scipy.optimize import linear_sum_assignment
 
 
 class bag(object):
-   def __init__(self, bag_id: int, bag_location: str, bag_end: str, bag_pickup_list: list, bag_delivery_list: list, bag_planned_route: str, bag_demand:float):
+   def __init__(self, bag_id: int, bag_location: str, bag_end: str,  bag_planned_route: list,bag_demand:float):
     self.id = bag_id
     self.location = bag_location
     self.end = bag_end
-    self.pickup_list = bag_pickup_list
-    self.delivery_list = bag_delivery_list
+   
     self.planned_route = bag_planned_route
     self.demand = bag_demand
 
@@ -147,33 +146,24 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
         # 识别是否已经被本次打包
         curbags_allocated_order_item = []
         # 开始打包
-        i = 0
-        j = 0
-        bag_id_to_destination = {}
+
         bag_id_to_planned_route = {}
         cur_unallocated_order_item = copy.copy(id_to_unallocated_order_item)
         cur_number = 0
         for i in range(0, bags_num):
-            # while i <= bags_num-1:
-            # bag_example = bag(0,'0','0',[],[],[],0)
-            # bags.append(bag_example)
-            # dabao
-            # bag_planned_route
-            # bag_ = bag(i,'','',bag_lnned_route,%
 
-            # 读取第一个非零状态订单/读取最近未分配订单
             if len(id_to_unallocated_order_item) == 0:
                 break
 
-            for j in range(0, len(list(cur_unallocated_order_item))):
-                item = list(cur_unallocated_order_item)[j]
+            for j in range(0, len(list(id_to_unallocated_order_item))):
+                item = list(id_to_unallocated_order_item)[j]
                 if item in list(curbags_allocated_order_item):
                     continue
                 else:
                     cur_number = j
                     break
-            # 识别订单item排序
-            # bags[i]的初始信息初始化为第一个未分配订单相关参数
+                # 识别订单item排序
+                # bags[i]的初始信息初始化为第一个未分配订单相关参数
             bag_location = cur_unallocated_order_item[list(id_to_unallocated_order_item)[cur_number]].pickup_factory_id
 
             bag_end = cur_unallocated_order_item[
@@ -320,7 +310,7 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
                                         cur_bagdemand = cur_bagdemand + item.demand
                                 for item in cur_item_list:
                                     item_id = item.id
-                                    del cur_unallocated_order_item[item_id]
+                                    #del cur_unallocated_order_item[item_id]
                                 pickup_node, delivery_node = __create_pickup_and_delivery_nodes_of_items(cur_item_list,
                                                                                                          id_to_factory)
                                 bag_id_to_planned_route[i].append(pickup_node)
@@ -346,7 +336,7 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
                                             continue
                                     for item in cur_item_list:
                                         item_id = item.id
-                                        del cur_unallocated_order_item[item_id]
+                                        # del cur_unallocated_order_item[item_id]
                                     pickup_node, delivery_node = __create_pickup_and_delivery_nodes_of_items(
                                         cur_item_list,
                                         id_to_factory)
@@ -384,7 +374,7 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
                                             cur_bagdemand = cur_bagdemand + item.demand
                                     for item in cur_item_list:
                                         item_id = item.id
-                                        del cur_unallocated_order_item[item_id]
+                                        # del cur_unallocated_order_item[item_id]
                                     pickup_node, delivery_node = __create_pickup_and_delivery_nodes_of_items(
                                         cur_item_list,
                                         id_to_factory)
@@ -408,7 +398,7 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
                                             cur_bagdemand = cur_bagdemand + item.demand
                                     for item in cur_item_list:
                                         item_id = item.id
-                                        del cur_unallocated_order_item[item_id]
+                                        # del cur_unallocated_order_item[item_id]
                                     pickup_node, delivery_node = __create_pickup_and_delivery_nodes_of_items(
                                         cur_item_list,
                                         id_to_factory)
@@ -434,7 +424,7 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
                                                 continue
                                         for item in cur_item_list:
                                             item_id = item.id
-                                            del cur_unallocated_order_item[item_id]
+                                            # del cur_unallocated_order_item[item_id]
                                         pickup_node, delivery_node = __create_pickup_and_delivery_nodes_of_items(
                                             cur_item_list,
                                             id_to_factory)
@@ -462,7 +452,7 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
     def assign_bags_to_vehicles(bags: list, id_to_vehicle: dict, vehicle_id_to_destination: dict,
                                 vehicle_id_to_planned_route: dict, route_info):
         empty_vehicles = []
-        for vehicle_id, vehicle in id_to_vehicle:
+        for vehicle_id, vehicle in id_to_vehicle.item():
             if vehicle.carrying_items.is_empty() and MUDIDI:
                 empty_vehicles.append(vehicle)
         # 行号为vehicle 列号为bag
