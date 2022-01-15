@@ -182,78 +182,130 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
     # 1-opt operator for delivery nodes in a bag:
     #   输入：planning_routes，bag形式，前n/2个node是pickup，后一半是FILO对应的送货点
     #        ind1和ind2是两个index，将第ind1个node移出并插入到ind2后面
+    #        ind1_2_node为'p'表示在取货点中操作，'d'表示在送货点中操作
     #   输出：None，但输入的planning_routes变成新的planning_routes
-    def bag_1_opt(lis: list, ind1: int, ind2: int):
-        """
+    def bag_1_opt(lis: list, ind1: int, ind2: int, ind1_2_node):
+        if ind1_2_node == 'd':
+            # check ind1, ind2 feasibility
 
-        1-opt operator: for delivery nodes, insert ind1 node after ind2 node
+            if ind1 < int(len(lis) / 2) or ind1 > len(lis) - 1:
+                exc = Exception("Trying to operate wrong node! --ind1")
+                raise exc
+            if ind2 < int(len(lis) / 2) - 1 or ind2 > len(lis) - 1:
+                exc = Exception("Trying to insert to wrong place! --ind2")
+                raise exc
+            if ind1 == ind2 or ind1 - ind2 == 1:
+                return
 
-        """
-        # check ind1, ind2 feasibility
-        if ind1 < int(len(lis) / 2) or ind1 > len(lis) - 1:
-            exc = Exception("Trying to operate wrong node! --ind1")
-            raise exc
-        if ind2 < int(len(lis) / 2) - 1 or ind2 > len(lis) - 1:
-            exc = Exception("Trying to insert to wrong place! --ind2")
-            raise exc
-        if ind1 == ind2 or ind1 - ind2 == 1:
-            return
+            # delivery nodes
+            temp = lis[ind1]
+            del lis[ind1]
+            if ind1 < ind2:
+                lis.insert(ind2, temp)
+            else:
+                lis.insert(ind2 + 1, temp)
 
-        # delivery nodes
-        temp = lis[ind1]
-        del lis[ind1]
-        if ind1 < ind2:
-            lis.insert(ind2, temp)
-        else:
-            lis.insert(ind2 + 1, temp)
+            # corresponding pickup nodes
+            p_ind1 = int(len(lis) / 2 - 1 - (ind1 - len(lis) / 2))
+            p_ind2 = int(len(lis) / 2 - 1 - (ind2 - len(lis) / 2))
+            temp = lis[p_ind1]
+            del lis[p_ind1]
+            if p_ind1 > p_ind2:
+                lis.insert(p_ind2, temp)
+            else:
+                lis.insert(p_ind2 - 1, temp)
 
-        # corresponding pickup nodes
-        p_ind1 = int(len(lis) / 2 - 1 - (ind1 - len(lis) / 2))
-        p_ind2 = int(len(lis) / 2 - 1 - (ind2 - len(lis) / 2))
-        temp = lis[p_ind1]
-        del lis[p_ind1]
-        if p_ind1 > p_ind2:
-            lis.insert(p_ind2, temp)
-        else:
-            lis.insert(p_ind2 - 1, temp)
+        elif ind1_2_node == 'p':
+            # check ind1, ind2 feasibility
+
+            if ind1 > int(len(lis) / 2) - 1:
+                exc = Exception("Trying to operate wrong node! --ind1")
+                raise exc
+            if ind2 > int(len(lis) / 2) - 1:
+                exc = Exception("Trying to insert to wrong place! --ind2")
+                raise exc
+            if ind1 == ind2 or ind1 - ind2 == 1:
+                return
+
+            # pickup nodes
+            temp = lis[ind1]
+            del lis[ind1]
+            if ind1 < ind2:
+                lis.insert(ind2, temp)
+            else:
+                lis.insert(ind2 + 1, temp)
+
+            # corresponding delivery nodes
+            d_ind1 = int(len(lis) - 1 - ind1)
+            d_ind2 = int(len(lis) - 1 - ind2)
+            temp = lis[d_ind1]
+            del lis[d_ind1]
+            if d_ind1 > d_ind2:
+                lis.insert(d_ind2, temp)
+            else:
+                lis.insert(d_ind2 - 1, temp)
 
         return
 
     # calculate delta distance for 1-opt operator
     #   输入：planning_routes，bag形式，前n/2个node是pickup，后一半是FILO对应的送货点
     #        ind1和ind2是两个index，将第ind1个node移出并插入到ind2后面
+    #        ind1_2_node为'p'表示在取货点中操作，'d'表示在送货点中操作，但这两个都是相同(送、取)地点bag，如果取送货都不同，
+    #                    就是'_p'和'_d'，分别表示在取、送货点进行操作
     #   输出：将ind1的node插入ind2后，delta距离
-    def bag_delta_distance_1opt(lis, ind1, ind2):
+    def bag_delta_distance_1opt(lis, ind1, ind2, ind1_2_node):
 
         rd = route_info.calculate_distance_between_factories
 
-        if ind1 == int(len(lis)/2):
-            if ind2 != len(lis) - 1:
-                return - rd(lis[0].id, lis[ind1].id) - rd(lis[ind1].id, lis[ind1+1].id)\
-                       - rd(lis[ind2].id, lis[ind2+1].id) + rd(lis[0].id, lis[ind1+1].id)\
-                       + rd(lis[ind2].id, lis[ind1].id) + rd(lis[ind1].id, lis[ind2+1].id)
+        if ind1_2_node == 'd':
+            if ind1 == int(len(lis)/2):
+                if ind2 != len(lis) - 1:
+                    return - rd(lis[0].id, lis[ind1].id) - rd(lis[ind1].id, lis[ind1+1].id)\
+                           - rd(lis[ind2].id, lis[ind2+1].id) + rd(lis[0].id, lis[ind1+1].id)\
+                           + rd(lis[ind2].id, lis[ind1].id) + rd(lis[ind1].id, lis[ind2+1].id)
+                else:
+                    return - rd(lis[0].id, lis[ind1].id) - rd(lis[ind1].id, lis[ind1+1].id)\
+                           + rd(lis[0].id, lis[ind1+1].id) + rd(lis[ind1].id, lis[ind2].id)
+            elif ind1 != len(lis) - 1:
+                if ind2 != len(lis) - 1:
+                    return - rd(lis[ind1-1].id, lis[ind1].id) - rd(lis[ind1].id, lis[ind1+1].id)\
+                           - rd(lis[ind2].id, lis[ind2+1].id) + rd(lis[ind1-1].id, lis[ind1+1].id)\
+                           + rd(lis[ind2].id, lis[ind1].id) + rd(lis[ind1].id, lis[ind2+1].id)
+                else:
+                    return - rd(lis[ind1-1].id, lis[ind1].id) - rd(lis[ind1].id, lis[ind1+1].id)\
+                           + rd(lis[ind1-1].id, lis[ind1+1].id) + rd(lis[ind2].id, lis[ind1].id)
             else:
-                return - rd(lis[0].id, lis[ind1].id) - rd(lis[ind1].id, lis[ind1+1].id)\
-                       + rd(lis[0].id, lis[ind1+1].id) + rd(lis[ind1].id, lis[ind2].id)
-        elif ind1 != len(lis) - 1:
-            if ind2 != len(lis) - 1:
+                return - rd(lis[ind1-1].id, lis[ind1].id) - rd(lis[ind2].id, lis[ind2+1].id)\
+                       + rd(lis[ind2].id, lis[ind1].id) + rd(lis[ind1].id, lis[ind2+1].id)
+
+        elif ind1_2_node == 'p':
+            if ind1 == 0:
+                return - rd(lis[ind1].id, lis[ind1 + 1].id) - rd(lis[ind2].id, lis[ind2 + 1].id) \
+                       + rd(lis[ind2].id, lis[ind1].id) + rd(lis[ind1].id, lis[ind2 + 1].id)
+            else:
                 return - rd(lis[ind1-1].id, lis[ind1].id) - rd(lis[ind1].id, lis[ind1+1].id)\
                        - rd(lis[ind2].id, lis[ind2+1].id) + rd(lis[ind1-1].id, lis[ind1+1].id)\
                        + rd(lis[ind2].id, lis[ind1].id) + rd(lis[ind1].id, lis[ind2+1].id)
-            else:
-                return - rd(lis[ind1-1].id, lis[ind1].id) - rd(lis[ind1].id, lis[ind1+1].id)\
-                       + rd(lis[ind1-1].id, lis[ind1+1].id) + rd(lis[ind2].id, lis[ind1].id)
-        else:
-            return - rd(lis[ind1-1].id, lis[ind1].id) - rd(lis[ind2].id, lis[ind2+1].id)\
-                   + rd(lis[ind2].id, lis[ind1].id) + rd(lis[ind1].id, lis[ind2+1].id)
+
+        elif ind1_2_node == '_p':
+            temp_lis = copy.deepcopy((lis))
+            bag_1_opt(temp_lis, ind1, ind2, 'p')
+            return get_total_distance(temp_lis) - get_total_distance(lis)
+        elif ind1_2_node == '_d':
+            temp_lis = copy.deepcopy((lis))
+            bag_1_opt(temp_lis, ind1, ind2, 'd')
+            return get_total_distance(temp_lis) - get_total_distance(lis)
+
+
 
     # local serach functions
     # Only downhill local search, to converge to local minimum. Only consider
     # the minimum total distance for these deliver nodes.
     # Input : the planned route, namely a <list> of nodes.
+    #         pd，值可为'p' 或'd'，代表搜索的是取货点还是送货点
     #         flag_loop, 默认值True，表示循环整个planned_route，如果是False，第一个更优解直接返回
     # Output: new planned route
-    def bag_downhill_local_serach(planned_route, flag_loop = True):
+    def bag_downhill_local_serach(planned_route, pd,flag_loop = True):
         sol = planned_route
         for i in range(int(len(planned_route) / 2), len(planned_route)):
             for j in range(int(len(planned_route) / 2) - 1, len(planned_route)):
@@ -350,6 +402,17 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
     node8 = Node(fac_9f1a09c368584eba9e7f10a53d55caae.id, fac_9f1a09c368584eba9e7f10a53d55caae.lng, fac_9f1a09c368584eba9e7f10a53d55caae.lat, [],[])
     node9 = Node(fac_b6dd694ae05541dba369a2a759d2c2b9.id, fac_b6dd694ae05541dba369a2a759d2c2b9.lng, fac_b6dd694ae05541dba369a2a759d2c2b9.lat,[],[])
     node10 = Node(fac_32ab2049f3fb437881ff3912470d7840.id, fac_32ab2049f3fb437881ff3912470d7840.lng, fac_32ab2049f3fb437881ff3912470d7840.lat,[],[])
+    # node6 = Node(fac_b6dd694ae05541dba369a2a759d2c2b9.id, fac_b6dd694ae05541dba369a2a759d2c2b9.lng,
+    #              fac_b6dd694ae05541dba369a2a759d2c2b9.lat, [], [])
+    # node7 = Node(fac_b6dd694ae05541dba369a2a759d2c2b9.id, fac_b6dd694ae05541dba369a2a759d2c2b9.lng,
+    #              fac_b6dd694ae05541dba369a2a759d2c2b9.lat, [], [])
+    # node8 = Node(fac_b6dd694ae05541dba369a2a759d2c2b9.id, fac_b6dd694ae05541dba369a2a759d2c2b9.lng,
+    #              fac_b6dd694ae05541dba369a2a759d2c2b9.lat, [], [])
+    # node9 = Node(fac_b6dd694ae05541dba369a2a759d2c2b9.id, fac_b6dd694ae05541dba369a2a759d2c2b9.lng,
+    #              fac_b6dd694ae05541dba369a2a759d2c2b9.lat, [], [])
+    # node10 = Node(fac_b6dd694ae05541dba369a2a759d2c2b9.id, fac_b6dd694ae05541dba369a2a759d2c2b9.lng,
+    #              fac_b6dd694ae05541dba369a2a759d2c2b9.lat, [], [])
+
     planned_routes_test = [node1,node2,node3,node4,node5,node10,node9,node8,node7,node6]
     for i in range(int(len(planned_routes_test) / 2)):
         planned_routes_test[i].name = i+1
@@ -358,6 +421,7 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
         planned_routes_test[i].name = tag
         tag -= 1
 
+    # test
 
 
 
