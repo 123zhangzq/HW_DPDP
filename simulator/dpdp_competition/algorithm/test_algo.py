@@ -305,43 +305,121 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
     #         pd，值可为'p' 或'd'，代表搜索的是取货点还是送货点
     #         flag_loop, 默认值True，表示循环整个planned_route，如果是False，第一个更优解直接返回
     # Output: new planned route
-    def bag_downhill_local_serach(planned_route, pd,flag_loop = True):
+    def bag_downhill_local_serach(planned_route, pd, flag_loop = True):
         sol = planned_route
-        for i in range(int(len(planned_route) / 2), len(planned_route)):
-            for j in range(int(len(planned_route) / 2) - 1, len(planned_route)):
-                if i == j or i - j == 1:
-                    continue
-                else:
-                    delta_dis = bag_delta_distance_1opt(sol, i, j)
-                    if delta_dis < 0.0 and abs(delta_dis) > 1e-5:
-                        bag_1_opt(sol, i, j)
-                        if not flag_loop:
-                            return sol
+        if pd == 'd':
+            for i in range(int(len(planned_route) / 2), len(planned_route)):
+                for j in range(int(len(planned_route) / 2) - 1, len(planned_route)):
+                    if i == j or i - j == 1:
+                        continue
+                    else:
+                        delta_dis = bag_delta_distance_1opt(sol, i, j, 'd')
+                        if delta_dis < 0.0 and abs(delta_dis) > 1e-5:
+                            bag_1_opt(sol, i, j, 'd')
+                            if not flag_loop:
+                                return sol
+        elif pd == '_d':
+            for i in range(int(len(planned_route) / 2), len(planned_route)):
+                for j in range(int(len(planned_route) / 2) - 1, len(planned_route)):
+                    if i == j or i - j == 1:
+                        continue
+                    else:
+                        delta_dis = bag_delta_distance_1opt(sol, i, j, '_d')
+                        if delta_dis < 0.0 and abs(delta_dis) > 1e-5:
+                            bag_1_opt(sol, i, j, 'd')
+                            if not flag_loop:
+                                return sol
+        elif pd == 'p':
+            for i in range(int(len(planned_route) / 2) - 1):
+                for j in range(int(len(planned_route) / 2) - 1):
+                    if i == j or i - j == 1:
+                        continue
+                    else:
+                        delta_dis = bag_delta_distance_1opt(sol, i, j, 'p')
+                        if delta_dis < 0.0 and abs(delta_dis) > 1e-5:
+                            bag_1_opt(sol, i, j, 'p')
+                            if not flag_loop:
+                                return sol
+        elif pd == '_p':
+            for i in range(int(len(planned_route) / 2) - 1):
+                for j in range(int(len(planned_route) / 2) - 1):
+                    if i == j or i - j == 1:
+                        continue
+                    else:
+                        delta_dis = bag_delta_distance_1opt(sol, i, j, '_p')
+                        if delta_dis < 0.0 and abs(delta_dis) > 1e-5:
+                            bag_1_opt(sol, i, j, 'p')
+                            if not flag_loop:
+                                return sol
         return sol
 
     # Record-2-Record, metaheuristic algo
     # Input : the planned route, namely a <list> of nodes.
     # Output: new planned route
-    def bag_r2r_local_search(planned_route):
+    def bag_r2r_local_search(planned_route, pd):
         sol = planned_route
         BKS = copy.deepcopy(sol)
         BKS_value = get_total_distance(BKS)
         record_para = 0.05  # can be adjusted
         record = BKS_value * record_para
 
-        for i in range(int(len(planned_route) / 2), len(planned_route)):
-            for j in range(int(len(planned_route) / 2) - 1, len(planned_route)):
-                if i == j or i - j == 1:
-                    continue
-                else:
-                    delta_dis = bag_delta_distance_1opt(sol, i, j)
-                    if delta_dis < 0.0 and abs(delta_dis) > 1e-5:
-                        bag_1_opt(sol, i, j)
-                        BKS = sol
-                        BKS_value = get_total_distance(BKS)
-                        record = BKS_value * record_para
-                    elif delta_dis < record:
-                        bag_1_opt(sol, i, j)
+        if pd == 'd':
+            for i in range(int(len(planned_route) / 2), len(planned_route)):
+                for j in range(int(len(planned_route) / 2) - 1, len(planned_route)):
+                    if i == j or i - j == 1:
+                        continue
+                    else:
+                        delta_dis = bag_delta_distance_1opt(sol, i, j, 'd')
+                        if delta_dis < 0.0 and abs(delta_dis) > 1e-5:
+                            bag_1_opt(sol, i, j, 'd')
+                            BKS = sol
+                            BKS_value = get_total_distance(BKS)
+                            record = BKS_value * record_para
+                        elif delta_dis < record:
+                            bag_1_opt(sol, i, j, 'd')
+        elif pd == '_d':
+            for i in range(int(len(planned_route) / 2), len(planned_route)):
+                for j in range(int(len(planned_route) / 2) - 1, len(planned_route)):
+                    if i == j or i - j == 1:
+                        continue
+                    else:
+                        delta_dis = bag_delta_distance_1opt(sol, i, j, '_d')
+                        if delta_dis < 0.0 and abs(delta_dis) > 1e-5:
+                            bag_1_opt(sol, i, j, 'd')
+                            BKS = sol
+                            BKS_value = get_total_distance(BKS)
+                            record = BKS_value * record_para
+                        elif delta_dis < record:
+                            bag_1_opt(sol, i, j, 'd')
+        elif pd == 'p':
+            for i in range(int(len(planned_route) / 2) - 1):
+                for j in range(int(len(planned_route) / 2) - 1):
+                    if i == j or i - j == 1:
+                        continue
+                    else:
+                        delta_dis = bag_delta_distance_1opt(sol, i, j, 'p')
+                        if delta_dis < 0.0 and abs(delta_dis) > 1e-5:
+                            bag_1_opt(sol, i, j, 'p')
+                            BKS = sol
+                            BKS_value = get_total_distance(BKS)
+                            record = BKS_value * record_para
+                        elif delta_dis < record:
+                            bag_1_opt(sol, i, j, 'p')
+        elif pd == '_p':
+            for i in range(int(len(planned_route) / 2) - 1):
+                for j in range(int(len(planned_route) / 2) - 1):
+                    if i == j or i - j == 1:
+                        continue
+                    else:
+                        delta_dis = bag_delta_distance_1opt(sol, i, j, '_p')
+                        if delta_dis < 0.0 and abs(delta_dis) > 1e-5:
+                            bag_1_opt(sol, i, j, 'p')
+                            BKS = sol
+                            BKS_value = get_total_distance(BKS)
+                            record = BKS_value * record_para
+                        elif delta_dis < record:
+                            bag_1_opt(sol, i, j, 'p')
+
         return BKS
 
     # local search algo with timing
@@ -350,26 +428,67 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
     def local_search(bags):
         for i in range(len(bags)):
 
+            if bags[i].tag_pd == 'spd':
+                continue
+
             time_start = time.time()
 
             temp_sol = bags[i].planned_route
             BKS_value = get_total_distance(temp_sol)
 
-            while 1:
+            if bags[i].tag_pd == 'd':
+                while 1:
 
-                running_time = time.time() - time_start
-                if running_time > 60 * 9 / len(bags):  # s
-                    break
+                    running_time = time.time() - time_start
+                    if running_time > 60 * 9 / len(bags):  # s
+                        break
 
-                temp_sol = bag_r2r_local_search(temp_sol)
-                temp_sol = bag_downhill_local_serach(temp_sol)
-                cur_value = get_total_distance(temp_sol)
-                delta = BKS_value - cur_value
-                if delta > 0:
-                    BKS_value = cur_value
-                elif delta == 0:
-                    bags[i].planned_route = temp_sol
-                    break
+                    temp_sol = bag_r2r_local_search(temp_sol, 'd')
+                    temp_sol = bag_downhill_local_serach(temp_sol, 'd')
+                    cur_value = get_total_distance(temp_sol)
+                    delta = BKS_value - cur_value
+                    if delta > 0:
+                        BKS_value = cur_value
+                    elif delta == 0:
+                        bags[i].planned_route = temp_sol
+                        break
+
+            elif bags[i].tag_pd == 'p':
+                while 1:
+
+                    running_time = time.time() - time_start
+                    if running_time > 60 * 9 / len(bags):  # s
+                        break
+
+                    temp_sol = bag_r2r_local_search(temp_sol, 'p')
+                    temp_sol = bag_downhill_local_serach(temp_sol, 'p')
+                    cur_value = get_total_distance(temp_sol)
+                    delta = BKS_value - cur_value
+                    if delta > 0:
+                        BKS_value = cur_value
+                    elif delta == 0:
+                        bags[i].planned_route = temp_sol
+                        break
+
+            elif bags[i].tag_pd == 'pd':
+                while 1:
+
+                    running_time = time.time() - time_start
+                    if running_time > 60 * 9 / len(bags):  # s
+                        break
+
+                    temp_sol = bag_r2r_local_search(temp_sol, '_p')
+                    temp_sol = bag_r2r_local_search(temp_sol, '_d')
+                    temp_sol = bag_downhill_local_serach(temp_sol, '_p')
+                    temp_sol = bag_downhill_local_serach(temp_sol, '_d')
+                    cur_value = get_total_distance(temp_sol)
+                    delta = BKS_value - cur_value
+                    if delta > 0:
+                        BKS_value = cur_value
+                    elif delta == 0:
+                        bags[i].planned_route = temp_sol
+                        break
+
             return
 
 
@@ -382,24 +501,24 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
     fac_b6dd694ae05541dba369a2a759d2c2b9 = id_to_factory.get('b6dd694ae05541dba369a2a759d2c2b9')
     fac_9f1a09c368584eba9e7f10a53d55caae = id_to_factory.get('9f1a09c368584eba9e7f10a53d55caae')
     fac_32ab2049f3fb437881ff3912470d7840 = id_to_factory.get('32ab2049f3fb437881ff3912470d7840')
-    node1 = Node(fac_2445d4bd004c457d95957d6ecf77f759.id, fac_2445d4bd004c457d95957d6ecf77f759.lng, fac_2445d4bd004c457d95957d6ecf77f759.lat,[],[])
-    node2 = Node(fac_2445d4bd004c457d95957d6ecf77f759.id, fac_2445d4bd004c457d95957d6ecf77f759.lng, fac_2445d4bd004c457d95957d6ecf77f759.lat,[],[])
-    node3 = Node(fac_ffd0ed8719f54294a452ed3e3b6a986c.id, fac_ffd0ed8719f54294a452ed3e3b6a986c.lng, fac_ffd0ed8719f54294a452ed3e3b6a986c.lat, [],[])
-    node4 = Node(fac_2445d4bd004c457d95957d6ecf77f759.id, fac_2445d4bd004c457d95957d6ecf77f759.lng, fac_2445d4bd004c457d95957d6ecf77f759.lat,[],[])
-    node5 = Node(fac_f6faef4b36e743328800b961aced4a2c.id, fac_f6faef4b36e743328800b961aced4a2c.lng, fac_f6faef4b36e743328800b961aced4a2c.lat,[],[])
-    # node1 = Node(fac_2445d4bd004c457d95957d6ecf77f759.id, fac_2445d4bd004c457d95957d6ecf77f759.lng,
-    #              fac_2445d4bd004c457d95957d6ecf77f759.lat, [], [])
-    # node2 = Node(fac_2445d4bd004c457d95957d6ecf77f759.id, fac_2445d4bd004c457d95957d6ecf77f759.lng,
-    #              fac_2445d4bd004c457d95957d6ecf77f759.lat, [], [])
-    # node3 = Node(fac_2445d4bd004c457d95957d6ecf77f759.id, fac_2445d4bd004c457d95957d6ecf77f759.lng,
-    #              fac_2445d4bd004c457d95957d6ecf77f759.lat, [], [])
-    # node4 = Node(fac_2445d4bd004c457d95957d6ecf77f759.id, fac_2445d4bd004c457d95957d6ecf77f759.lng,
-    #              fac_2445d4bd004c457d95957d6ecf77f759.lat, [], [])
-    # node5 = Node(fac_2445d4bd004c457d95957d6ecf77f759.id, fac_2445d4bd004c457d95957d6ecf77f759.lng,
-    #              fac_2445d4bd004c457d95957d6ecf77f759.lat, [], [])
-    node6 = Node(fac_b6dd694ae05541dba369a2a759d2c2b9.id, fac_b6dd694ae05541dba369a2a759d2c2b9.lng, fac_b6dd694ae05541dba369a2a759d2c2b9.lat,[],[])
+    # node1 = Node(fac_2445d4bd004c457d95957d6ecf77f759.id, fac_2445d4bd004c457d95957d6ecf77f759.lng, fac_2445d4bd004c457d95957d6ecf77f759.lat,[],[])
+    # node2 = Node(fac_2445d4bd004c457d95957d6ecf77f759.id, fac_2445d4bd004c457d95957d6ecf77f759.lng, fac_2445d4bd004c457d95957d6ecf77f759.lat,[],[])
+    # node3 = Node(fac_ffd0ed8719f54294a452ed3e3b6a986c.id, fac_ffd0ed8719f54294a452ed3e3b6a986c.lng, fac_ffd0ed8719f54294a452ed3e3b6a986c.lat, [],[])
+    # node4 = Node(fac_2445d4bd004c457d95957d6ecf77f759.id, fac_2445d4bd004c457d95957d6ecf77f759.lng, fac_2445d4bd004c457d95957d6ecf77f759.lat,[],[])
+    # node5 = Node(fac_f6faef4b36e743328800b961aced4a2c.id, fac_f6faef4b36e743328800b961aced4a2c.lng, fac_f6faef4b36e743328800b961aced4a2c.lat,[],[])
+    node1 = Node(fac_2445d4bd004c457d95957d6ecf77f759.id, fac_2445d4bd004c457d95957d6ecf77f759.lng,
+                 fac_2445d4bd004c457d95957d6ecf77f759.lat, [], [])
+    node2 = Node(fac_2445d4bd004c457d95957d6ecf77f759.id, fac_2445d4bd004c457d95957d6ecf77f759.lng,
+                 fac_2445d4bd004c457d95957d6ecf77f759.lat, [], [])
+    node3 = Node(fac_2445d4bd004c457d95957d6ecf77f759.id, fac_2445d4bd004c457d95957d6ecf77f759.lng,
+                 fac_2445d4bd004c457d95957d6ecf77f759.lat, [], [])
+    node4 = Node(fac_2445d4bd004c457d95957d6ecf77f759.id, fac_2445d4bd004c457d95957d6ecf77f759.lng,
+                 fac_2445d4bd004c457d95957d6ecf77f759.lat, [], [])
+    node5 = Node(fac_2445d4bd004c457d95957d6ecf77f759.id, fac_2445d4bd004c457d95957d6ecf77f759.lng,
+                 fac_2445d4bd004c457d95957d6ecf77f759.lat, [], [])
+    node6 = Node(fac_2445d4bd004c457d95957d6ecf77f759.id, fac_2445d4bd004c457d95957d6ecf77f759.lng, fac_2445d4bd004c457d95957d6ecf77f759.lat,[],[])
     node7 = Node(fac_9f1a09c368584eba9e7f10a53d55caae.id, fac_9f1a09c368584eba9e7f10a53d55caae.lng, fac_9f1a09c368584eba9e7f10a53d55caae.lat, [],[])
-    node8 = Node(fac_9f1a09c368584eba9e7f10a53d55caae.id, fac_9f1a09c368584eba9e7f10a53d55caae.lng, fac_9f1a09c368584eba9e7f10a53d55caae.lat, [],[])
+    node8 = Node(fac_ffd0ed8719f54294a452ed3e3b6a986c.id, fac_ffd0ed8719f54294a452ed3e3b6a986c.lng, fac_ffd0ed8719f54294a452ed3e3b6a986c.lat, [],[])
     node9 = Node(fac_b6dd694ae05541dba369a2a759d2c2b9.id, fac_b6dd694ae05541dba369a2a759d2c2b9.lng, fac_b6dd694ae05541dba369a2a759d2c2b9.lat,[],[])
     node10 = Node(fac_32ab2049f3fb437881ff3912470d7840.id, fac_32ab2049f3fb437881ff3912470d7840.lng, fac_32ab2049f3fb437881ff3912470d7840.lat,[],[])
     # node6 = Node(fac_b6dd694ae05541dba369a2a759d2c2b9.id, fac_b6dd694ae05541dba369a2a759d2c2b9.lng,
@@ -413,7 +532,7 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
     # node10 = Node(fac_b6dd694ae05541dba369a2a759d2c2b9.id, fac_b6dd694ae05541dba369a2a759d2c2b9.lng,
     #              fac_b6dd694ae05541dba369a2a759d2c2b9.lat, [], [])
 
-    planned_routes_test = [node1,node2,node3,node4,node5,node10,node9,node8,node7,node6]
+    planned_routes_test = [node1,node2,node3,node4,node5,node9,node10,node8,node7,node6]
     for i in range(int(len(planned_routes_test) / 2)):
         planned_routes_test[i].name = i+1
     tag = 10
@@ -421,8 +540,21 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
         planned_routes_test[i].name = tag
         tag -= 1
 
-    # test
+    class Bags(object):
+        def __init__(self, pr, pd):
+            self.planned_route = pr
+            self.tag_pd = pd
 
+    test_bag = Bags(planned_routes_test, 'd')
+    test_bags = []
+    test_bags.append(test_bag)
+
+
+
+    # test
+    print(get_total_distance(test_bags[0].planned_route))
+    local_search(test_bags)
+    print(get_total_distance(test_bags[0].planned_route))
 
 
     ################################################################
