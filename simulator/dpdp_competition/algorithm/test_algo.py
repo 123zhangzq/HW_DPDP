@@ -532,7 +532,7 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
     # node10 = Node(fac_b6dd694ae05541dba369a2a759d2c2b9.id, fac_b6dd694ae05541dba369a2a759d2c2b9.lng,
     #              fac_b6dd694ae05541dba369a2a759d2c2b9.lat, [], [])
 
-    planned_routes_test = [node1,node2,node3,node4,node5,node9,node10,node8,node7,node6]
+    planned_routes_test = [node1,node2,node3,node4,node5,node10,node9,node8,node7,node6]
     for i in range(int(len(planned_routes_test) / 2)):
         planned_routes_test[i].name = i+1
     tag = 10
@@ -552,9 +552,9 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
 
 
     # test
-    print(get_total_distance(test_bags[0].planned_route))
-    local_search(test_bags)
-    print(get_total_distance(test_bags[0].planned_route))
+    # print(get_total_distance(test_bags[0].planned_route))
+    # local_search(test_bags)
+    # print(get_total_distance(test_bags[0].planned_route))
 
 
     ################################################################
