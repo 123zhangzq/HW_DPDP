@@ -1,0 +1,15 @@
+2022-01-21 22:11:02,878 [main.py         | 48] INFO: Start to run instance_1
+2022-01-21 22:11:02,893 [simulate_api.py | 60] INFO: Start time of the simulator: 2022-01-21 00:00:00, time interval:  600.00
+2022-01-21 22:11:02,925 [input_utils.py  | 48] INFO: Get 154 factories
+2022-01-21 22:11:05,904 [input_utils.py  | 52] INFO: Get 23562 routes
+2022-01-21 22:11:05,966 [input_utils.py  | 57] INFO: Get 5 vehicles
+2022-01-21 22:11:05,998 [input_utils.py  | 61] INFO: Get 50 orders
+2022-01-21 22:11:05,998 [simulate_api.py | 87] INFO: Initial position of V_1 is e2d5093fbe36431f8986ddb0e1c586be
+2022-01-21 22:11:05,998 [simulate_api.py | 87] INFO: Initial position of V_2 is 7fe14b93f0f04ee7a994ef5b2c1fdb72
+2022-01-21 22:11:06,006 [simulate_api.py | 87] INFO: Initial position of V_3 is fa366fc87a124d32926daa5bb093129f
+2022-01-21 22:11:06,006 [simulate_api.py | 87] INFO: Initial position of V_4 is e47399648fa842b2b8f80094343d8091
+2022-01-21 22:11:06,006 [simulate_api.py | 87] INFO: Initial position of V_5 is becb4f85393540b287e7329758b8d832
+2022-01-21 22:11:06,006 [simulate_environment.py | 102] INFO: **************************************************
+2022-01-21 22:11:06,006 [simulate_environment.py | 106] INFO: cur time: 2022-01-21 00:10:00, pre time: 2022-01-21 00:00:00
+2022-01-21 22:11:06,006 [simulate_environment.py | 143] INFO: Start to update the input of 2022-01-21 00:10:00
+2022-01-21 22:11:06,006 [simulate_environment.py | 171] INFO: Get 1 unallocated order items, 0 ongoing order items, 0 completed order items
