@@ -581,6 +581,34 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
 
     ################################################################
 
+    ######################### hitchhiker ###########################
+    # function to check the nth node remain capacity
+    def n_node_remain_capa(vehicle, n):
+        left_capacity = vehicle.board_capacity
+
+        carrying_items = copy.copy(vehicle.carrying_items)
+        # Stack
+        while not carrying_items.is_empty():
+            item = carrying_items.pop()
+            left_capacity -= item.demand
+
+        for i, node in enumerate(vehicle.planned_route):
+            if i > n:
+                break
+            delivery_items = node.delivery_items
+            pickup_items = node.pickup_items
+            for item in delivery_items:
+                left_capacity += item.demand
+
+            for item in pickup_items:
+                left_capacity -= item.demand
+
+        return left_capacity
+
+
+
+    ################################################################
+
     return vehicle_id_to_destination, vehicle_id_to_planned_route
 
 
