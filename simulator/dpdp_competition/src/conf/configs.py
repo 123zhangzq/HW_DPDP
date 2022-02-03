@@ -75,7 +75,7 @@ class Configs(object):
     algorithm_output_order_info_path = os.path.join(algorithm_data_interaction_folder_path, 'order_info.txt')
 
     algorithm_remain_route_path = os.path.join(algorithm_data_interaction_folder_path, 'remain_routes.json')
-
+    algorithm_output_route_record_path = os.path.join(algorithm_data_interaction_folder_path, 'routes_record.json')
 
     # 算法入口文件名，不含扩展名
     ALGORITHM_ENTRY_FILE_NAME = 'main_algorithm'

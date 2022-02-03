@@ -32,9 +32,9 @@ from src.common.node import Node
 from src.common.route import Map
 from src.conf.configs import Configs
 from src.utils.input_utils import get_factory_info, get_route_map
-from src.utils.json_tools import convert_nodes_to_json
+from src.utils.json_tools import convert_nodes_to_json, convert_nodes_to_json_for_record
 from src.utils.json_tools import get_vehicle_instance_dict, get_order_item_dict
-from src.utils.json_tools import read_json_from_file, write_json_to_file
+from src.utils.json_tools import read_json_from_file, write_json_to_file, write_json_to_record_file
 from src.utils.logging_engine import logger
 
 from scipy.optimize import linear_sum_assignment
@@ -1445,11 +1445,13 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
 
 
     # create the output of the algorithm
-
+    record_results = copy.deepcopy(vehicle_id_to_planned_route)
     for vehicle_id, vehicle in id_to_vehicle.items():
         origin_planned_route = vehicle_id_to_planned_route.get(vehicle_id)
         # Combine adjacent-duplicated nodes.
         __combine_duplicated_nodes(origin_planned_route)
+
+        record_results[vehicle_id] = origin_planned_route
 
         destination = None
         planned_route = []
@@ -1468,7 +1470,7 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
         vehicle_id_to_destination[vehicle_id] = destination
         vehicle_id_to_planned_route[vehicle_id] = planned_route
 
-    return vehicle_id_to_destination, vehicle_id_to_planned_route
+    return vehicle_id_to_destination, vehicle_id_to_planned_route, record_results
 
 
 
@@ -1564,19 +1566,20 @@ Main body
 def scheduling():
     # read the input json, you can design your own classes
     id_to_factory, id_to_unallocated_order_item, id_to_ongoing_order_item, id_to_vehicle, route_info = __read_input_json()
+    current_time = id_to_vehicle['V_1'].gps_update_time
 
     # local search
     ##################
 
     # dispatching algorithm
-    vehicle_id_to_destination, vehicle_id_to_planned_route = dispatch_orders_to_vehicles(
+    vehicle_id_to_destination, vehicle_id_to_planned_route, record_results = dispatch_orders_to_vehicles(
         id_to_unallocated_order_item,
         id_to_vehicle,
         id_to_factory,
         route_info)
 
     # output the dispatch result
-    __output_json(vehicle_id_to_destination, vehicle_id_to_planned_route)
+    __output_json(vehicle_id_to_destination, vehicle_id_to_planned_route, record_results, current_time)
 
 
 def __read_input_json():
@@ -1602,6 +1605,8 @@ def __read_input_json():
     return id_to_factory, id_to_unallocated_order_item, id_to_ongoing_order_item, id_to_vehicle, route_map
 
 
-def __output_json(vehicle_id_to_destination, vehicle_id_to_planned_route):
+def __output_json(vehicle_id_to_destination, vehicle_id_to_planned_route, rr, current_time):
     write_json_to_file(Configs.algorithm_output_destination_path, convert_nodes_to_json(vehicle_id_to_destination))
     write_json_to_file(Configs.algorithm_output_planned_route_path, convert_nodes_to_json(vehicle_id_to_planned_route))
+
+    write_json_to_record_file(Configs.algorithm_output_route_record_path, convert_nodes_to_json_for_record(rr, current_time))

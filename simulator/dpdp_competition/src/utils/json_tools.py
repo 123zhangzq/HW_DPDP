@@ -101,6 +101,11 @@ def write_json_to_file(file_name, data):
     with open(file_name, 'w') as fd:
         fd.write(json.dumps(data, indent=4))
 
+def write_json_to_record_file(file_name, data):
+    with open(file_name, 'a') as fd:
+        fd.write(json.dumps(data, indent=4))
+        fd.write('\n')
+
 
 """ create the input of the algorithm (output json of simulation)"""
 
@@ -275,6 +280,28 @@ def convert_nodes_to_json(vehicle_id_to_nodes):
             result_dict[key] = []
         elif value and isinstance(value, list) and hasattr(value[0], '__dict__'):
             result_dict[key] = [convert_node_to_json(node) for node in value]
+    return result_dict
+
+def convert_nodes_to_json_for_record(vehicle_id_to_nodes, current_time):
+    result_dict = {}
+    result_dict['timeslot'] = current_time
+
+    inner_dict = {}
+    for key, value in vehicle_id_to_nodes.items():
+        if value is None:
+            inner_dict[key] = None
+            continue
+
+        # 字典的情况
+        if hasattr(value, '__dict__'):
+            inner_dict[key] = convert_node_to_json(value)
+        # 列表的情况
+        elif not value:
+            inner_dict[key] = []
+        elif value and isinstance(value, list) and hasattr(value[0], '__dict__'):
+            inner_dict[key] = [convert_node_to_json(node) for node in value]
+
+    result_dict['sol'] = inner_dict
     return result_dict
 
 
