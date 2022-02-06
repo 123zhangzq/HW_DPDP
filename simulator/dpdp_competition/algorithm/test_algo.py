@@ -1205,14 +1205,58 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
         return left_capacity
 
 
-    def calculate_earliest_committed_time(planned_route, n):
-        earliest_committed_time = 1e12
+    def calculate_shorest_remain_time(planned_route, n):
+        shortest_time = 1e12
+
+        if len(planned_route) == 0 or len(planned_route) == 1:
+            return shortest_time
+
+        esti_arr_time = current_time
+
+        for i in range(len(planned_route)):
+            if i == 0:
+                if planned_route[0].arrive_time != 0:
+                    esti_arr_time = planned_route[0].arrive_time
+
+                if len(planned_route[i].delivery_items) > 0:
+                    for j in range(len(planned_route[i].delivery_items)):
+                        esti_arr_time += planned_route[i].delivery_items[j].load_time
+                if len(planned_route[i].pickup_items) > 0:
+                    for j in range(len(planned_route[i].pickup_items)):
+                        esti_arr_time += planned_route[i].pickup_items[j].unload_time
+            else:
+                esti_arr_time += route_info.calculate_distance_between_factories(planned_route[i-1].id,
+                                                                         planned_route[i].id)
+
+                if len(planned_route[i].delivery_items) > 0:
+                    for j in range(len(planned_route[i].delivery_items)):
+                        esti_arr_time += planned_route[i].delivery_items[j].load_time
+
+                        if i > n:
+                            if planned_route[i].delivery_items[j].committed_completion_time - esti_arr_time < shortest_time:
+                                shortest_time = planned_route[i].delivery_items[j].committed_completion_time - esti_arr_time
+
+                if len(planned_route[i].pickup_items) > 0:
+                    for j in range(len(planned_route[i].pickup_items)):
+                        esti_arr_time += planned_route[i].pickup_items[j].unload_time
+
+        return shortest_time
+
+
+
+
+
+
+
+
         for i in range(n+1, len(planned_route)):
             if len(planned_route[i].delivery_items) > 0:
                 for j in range(len(planned_route[i].delivery_items)):
                     if planned_route[i].delivery_items[j].committed_completion_time < earliest_committed_time:
-                        earliest_committed_time = planned_route[i].delivery_items[j].committed_completion_time
-        return earliest_committed_time
+                        earliest_committed_time = planned_route[i].delivery_items[j].load_time
+        return shortest_time
+
+
 
 
     def check_route(planned_route: list):
