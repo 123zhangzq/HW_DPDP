@@ -1244,21 +1244,6 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
 
 
 
-
-
-
-
-
-        for i in range(n+1, len(planned_route)):
-            if len(planned_route[i].delivery_items) > 0:
-                for j in range(len(planned_route[i].delivery_items)):
-                    if planned_route[i].delivery_items[j].committed_completion_time < earliest_committed_time:
-                        earliest_committed_time = planned_route[i].delivery_items[j].load_time
-        return shortest_time
-
-
-
-
     def check_route(planned_route: list):
         demand = 0
         for i, node in enumerate(planned_route):
