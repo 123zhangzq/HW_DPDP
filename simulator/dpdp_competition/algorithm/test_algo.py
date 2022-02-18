@@ -1184,6 +1184,13 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
     current_time = int(__get_current_time(id_to_vehicle))
     now_time = int(time.time())
     start_time = now_time - (now_time - time.timezone) % 86400
+    hotsites_p = ['2445d4bd004c457d95957d6ecf77f759', '9b40bfd6ca1c432498685540652a5a8b',
+                  'f6faef4b36e743328800b961aced4a2c', 'b6dd694ae05541dba369a2a759d2c2b9',
+                  '5e2e9efa5ade4984bb18af66028bc0c8', 'ffd0ed8719f54294a452ed3e3b6a986c']
+    hotsites_d = ['2445d4bd004c457d95957d6ecf77f759', '9f1a09c368584eba9e7f10a53d55caae',
+                  'f6faef4b36e743328800b961aced4a2c', 'b6dd694ae05541dba369a2a759d2c2b9',
+                  '206128e3ee9a458d9cfd053cedc0fad6']
+
 
     can_split, cannot_split = split_dict(id_to_unallocated_order_item)
 
