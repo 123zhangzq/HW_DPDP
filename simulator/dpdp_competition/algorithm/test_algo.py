@@ -1,4 +1,4 @@
-20220210
+202203
 
 # v20220110
 
@@ -64,6 +64,38 @@ def dispatch_orders_to_vehicles(id_to_unallocated_order_item: dict, id_to_vehicl
     vehicle_id_to_planned_route = {}
 
     # my functions
+
+    def check_capacity(id_to_vehicle, vehicle_id_to_planned_route, capacity=15):
+        for vehicle_id, planned_route in vehicle_id_to_planned_route.items():
+            left_capacity = capacity
+
+            # Stack
+            carrying_items = copy.deepcopy(id_to_vehicle[vehicle_id].carrying_items)
+            while not carrying_items.is_empty():
+                item = carrying_items.pop()
+                left_capacity -= item.demand
+                if left_capacity < 0:
+                    print(f"left capacity {left_capacity} < 0")
+                    return False
+
+            for node in planned_route:
+                delivery_items = node.delivery_items
+                pickup_items = node.pickup_items
+                for item in delivery_items:
+                    left_capacity += item.demand
+                    if left_capacity > capacity:
+                        print(f"left capacity {left_capacity} > capacity {capacity}")
+                        return False
+
+                for item in pickup_items:
+                    left_capacity -= item.demand
+                    if left_capacity < 0:
+                        print(f"left capacity {left_capacity} < 0")
+                        return False
+        return True
+
+
+
     # pack function  打包函数
 
     def split_dict(id_to_unallocated_order_item):
