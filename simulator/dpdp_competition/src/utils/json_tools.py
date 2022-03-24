@@ -101,6 +101,11 @@ def write_json_to_file(file_name, data):
     with open(file_name, 'w') as fd:
         fd.write(json.dumps(data, indent=4))
 
+def write_json_to_record_file(file_name, data):
+    with open(file_name, 'a') as fd:
+        fd.write(json.dumps(data, indent=4))
+        fd.write('\n')
+
 
 """ create the input of the algorithm (output json of simulation)"""
 
@@ -127,6 +132,10 @@ def __get_vehicle_info_list(id_to_vehicle: dict):
 def __convert_vehicle_to_dict(vehicle):
     carrying_items = vehicle.get_loading_sequence()
 
+    planned_routes = []
+    for i in vehicle.planned_route:
+        planned_routes.append(__convert_destination_to_dict(i))
+
     vehicle_property = {
         "id": vehicle.id,
         "operation_time": vehicle.operation_time,
@@ -137,7 +146,8 @@ def __convert_vehicle_to_dict(vehicle):
         "arrive_time_at_current_factory": vehicle.arrive_time_at_current_factory,
         "leave_time_at_current_factory": vehicle.leave_time_at_current_factory,
         "carrying_items": [item.id for item in carrying_items],
-        "destination": __convert_destination_to_dict(vehicle.destination)
+        "destination": __convert_destination_to_dict(vehicle.destination),
+        "planned_routes":planned_routes
     }
     return vehicle_property
 
@@ -179,8 +189,12 @@ def get_vehicle_instance_dict(vehicle_infos: list, id_to_order_item: dict, id_to
         carrying_items = [id_to_order_item.get(item_id) for item_id in carrying_item_id_list
                           if item_id in carrying_item_id_list]
         destination = vehicle_info.get("destination")
+        rest_planned_route = vehicle_info.get("planned_routes")
         if destination is not None:
             destination = __get_destination(destination, id_to_factory, id_to_order_item)
+
+        if len(rest_planned_route) > 0:
+            rest_planned_route = __get_rest_planned_route(rest_planned_route, id_to_factory, id_to_order_item)
 
         cur_factory_id = vehicle_info.get("cur_factory_id")
         arrive_time_at_current_factory = vehicle_info.get("arrive_time_at_current_factory")
@@ -193,6 +207,7 @@ def get_vehicle_instance_dict(vehicle_infos: list, id_to_order_item: dict, id_to
         if vehicle_id not in id_to_vehicle:
             vehicle = Vehicle(vehicle_id, capacity, gps_id, operation_time, carrying_items)
             vehicle.destination = destination
+            vehicle.planned_route = rest_planned_route
             vehicle.set_cur_position_info(cur_factory_id, update_time,
                                           arrive_time_at_current_factory, leave_time_at_current_factory)
             id_to_vehicle[vehicle_id] = vehicle
@@ -209,6 +224,20 @@ def __get_destination(_dict, id_to_factory: dict, id_to_order_item: dict):
     arr_time = _dict.get("arrive_time")
     leave_time = _dict.get("leave_time")
     return Node(factory_id, factory.lng, factory.lat, pickup_items, delivery_items, arr_time, leave_time)
+
+def __get_rest_planned_route(_list_dict, id_to_factory: dict, id_to_order_item: dict):
+    lis_ = []
+    for _dict in _list_dict:
+        factory_id = _dict.get("factory_id")
+        factory = id_to_factory.get(factory_id)
+        delivery_item_ids = _dict.get("delivery_item_list")
+        delivery_items = [id_to_order_item.get(item_id) for item_id in delivery_item_ids]
+        pickup_item_ids = _dict.get("pickup_item_list")
+        pickup_items = [id_to_order_item.get(item_id) for item_id in pickup_item_ids]
+        arr_time = _dict.get("arrive_time")
+        leave_time = _dict.get("leave_time")
+        lis_.append(Node(factory_id, factory.lng, factory.lat, pickup_items, delivery_items, arr_time, leave_time))
+    return lis_
 
 
 def get_order_item_dict(_item_list, class_name):
@@ -251,6 +280,28 @@ def convert_nodes_to_json(vehicle_id_to_nodes):
             result_dict[key] = []
         elif value and isinstance(value, list) and hasattr(value[0], '__dict__'):
             result_dict[key] = [convert_node_to_json(node) for node in value]
+    return result_dict
+
+def convert_nodes_to_json_for_record(vehicle_id_to_nodes, current_time):
+    result_dict = {}
+    result_dict['timeslot'] = current_time
+
+    inner_dict = {}
+    for key, value in vehicle_id_to_nodes.items():
+        if value is None:
+            inner_dict[key] = None
+            continue
+
+        # 字典的情况
+        if hasattr(value, '__dict__'):
+            inner_dict[key] = convert_node_to_json(value)
+        # 列表的情况
+        elif not value:
+            inner_dict[key] = []
+        elif value and isinstance(value, list) and hasattr(value[0], '__dict__'):
+            inner_dict[key] = [convert_node_to_json(node) for node in value]
+
+    result_dict['sol'] = inner_dict
     return result_dict
 
 

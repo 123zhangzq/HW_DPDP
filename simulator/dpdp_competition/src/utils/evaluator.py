@@ -97,6 +97,11 @@ class Evaluator(object):
             if over_time > 0:
                 total_over_time += over_time
 
+                # write the overtime info to overtime.txt in data_interaction
+                with open(Configs.algorithm_overtime_info, 'a') as fd:
+                    fd.write(str(order_id) + ' ' + str(over_time))
+                    fd.write('\n')
+
         return total_over_time
 
 

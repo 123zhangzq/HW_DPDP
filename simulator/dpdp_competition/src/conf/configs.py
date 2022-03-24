@@ -72,6 +72,11 @@ class Configs(object):
 
     algorithm_output_destination_path = os.path.join(algorithm_data_interaction_folder_path, 'output_destination.json')
     algorithm_output_planned_route_path = os.path.join(algorithm_data_interaction_folder_path, 'output_route.json')
+    algorithm_output_order_info_path = os.path.join(algorithm_data_interaction_folder_path, 'order_info.txt')
+
+    algorithm_remain_route_path = os.path.join(algorithm_data_interaction_folder_path, 'remain_routes.json')
+    algorithm_output_route_record_path = os.path.join(algorithm_data_interaction_folder_path, 'routes_record.json')
+    algorithm_overtime_info = os.path.join(algorithm_data_interaction_folder_path, 'overtime_info.txt')
 
     # 算法入口文件名，不含扩展名
     ALGORITHM_ENTRY_FILE_NAME = 'main_algorithm'
@@ -99,5 +104,5 @@ class Configs(object):
     A_DAY_TIME_SECONDS = 24 * 60 * 60
 
     # 数据集选项，列表为空则选择所有数据集，如[]，[1], [1, 2, 3], [64]
-    selected_instances = [1]
+    selected_instances = [41]
     all_test_instances = range(1, 65)
